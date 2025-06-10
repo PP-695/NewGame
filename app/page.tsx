@@ -1,103 +1,163 @@
-import Image from "next/image";
+"use client"
+
+import { useState } from "react"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import CrossyRoad from "./games/crossy-road"
+import FlappyBird from "./games/flappy-bird"
+import Match3Game from "./games/match-3"
+import SpeedRunner from "./games/speed-runner"
+import WhackTheMole from "./games/whack-the-mole"
+import ReskinWizard from "@/components/reskin-wizard"
+
+type GameType = "crossy-road" | "flappy-bird" | "match-3" | "speed-runner" | "whack-the-mole" | "reskin-wizard" | null
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [currentGame, setCurrentGame] = useState<GameType>(null)
+  const [highScores, setHighScores] = useState<Record<string, number>>({
+    "crossy-road": 0,
+    "flappy-bird": 0,
+    "match-3": 0,
+    "speed-runner": 0,
+    "whack-the-mole": 0,
+    "reskin-wizard": 0,
+  })
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleScore = (game: string, score: number) => {
+    setHighScores(prev => ({
+      ...prev,
+      [game]: Math.max(prev[game] || 0, score)
+    }))
+  }
+
+  const handleBack = () => {
+    setCurrentGame(null)
+  }
+
+  const games = [
+    {
+      id: "crossy-road" as const,
+      title: "Crossy Road",
+      description: "Help the character cross busy roads, rivers, and railways!",
+      emoji: "🐸",
+      color: "from-green-400 to-blue-500"
+    },
+    {
+      id: "flappy-bird" as const,
+      title: "Flappy Bird",
+      description: "Navigate through pipes by tapping to keep the bird flying!",
+      emoji: "🐦",
+      color: "from-yellow-400 to-orange-500"
+    },
+    {
+      id: "match-3" as const,
+      title: "Match 3",
+      description: "Match three or more gems to score points!",
+      emoji: "💎",
+      color: "from-purple-400 to-pink-500"
+    },
+    {
+      id: "speed-runner" as const,
+      title: "Speed Runner",
+      description: "Run as far as you can while avoiding obstacles!",
+      emoji: "🏃",
+      color: "from-red-400 to-pink-500"
+    },
+    {
+      id: "whack-the-mole" as const,
+      title: "Whack the Mole",
+      description: "Hit the moles as they pop up from their holes!",
+      emoji: "🔨",
+      color: "from-brown-400 to-yellow-500"
+    },
+    {
+      id: "reskin-wizard" as const,
+      title: "Reskin Wizard",
+      description: "Create custom game assets with AI and export your own game!",
+      emoji: "🎨",
+      color: "from-blue-400 to-purple-500"
+    }
+  ]
+
+  if (currentGame) {
+    switch (currentGame) {
+      case "crossy-road":
+        return <CrossyRoad onBack={handleBack} onScore={(score) => handleScore("crossy-road", score)} />
+      case "flappy-bird":
+        return <FlappyBird onBack={handleBack} onScore={(score) => handleScore("flappy-bird", score)} />
+      case "match-3":
+        return <Match3Game onBack={handleBack} onScore={(score) => handleScore("match-3", score)} />
+      case "speed-runner":
+        return <SpeedRunner onBack={handleBack} onScore={(score) => handleScore("speed-runner", score)} />
+      case "whack-the-mole":
+        return <WhackTheMole onBack={handleBack} onScore={(score) => handleScore("whack-the-mole", score)} />
+      case "reskin-wizard":
+        return <ReskinWizard onBack={handleBack} />
+      default:
+        return null
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12 pt-8">
+          <h1 className="text-6xl font-bold text-white mb-4 bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 bg-clip-text text-transparent">
+            🎮 Game Arcade
+          </h1>
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+            Welcome to the ultimate gaming experience! Choose your adventure and beat your high scores!
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Games Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {games.map((game) => (
+            <Card 
+              key={game.id}
+              className="group hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden border-0 shadow-2xl bg-gradient-to-br from-slate-800 to-slate-900"
+              onClick={() => setCurrentGame(game.id)}
+            >
+              <CardHeader className="relative">
+                <div className={`absolute inset-0 bg-gradient-to-br ${game.color} opacity-10 group-hover:opacity-20 transition-opacity`} />
+                <div className="relative z-10 text-center">
+                  <div className="text-4xl mb-2">{game.emoji}</div>
+                  <CardTitle className="text-2xl text-white group-hover:text-yellow-300 transition-colors">
+                    {game.title}
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="relative z-10">
+                <p className="text-gray-300 mb-4 text-center">{game.description}</p>
+                <div className="text-center">
+                  {game.id !== "reskin-wizard" && (
+                    <>
+                      <div className="text-sm text-gray-400 mb-2">High Score</div>
+                      <div className="text-2xl font-bold text-yellow-400">
+                        {highScores[game.id]?.toLocaleString() || "0"}
+                      </div>
+                    </>
+                  )}
+                  {game.id === "reskin-wizard" && (
+                    <div className="text-sm text-gray-400 mb-2">AI Game Creator</div>
+                  )}
+                </div>
+                <div className="mt-4 text-center">
+                  <button className={`px-6 py-2 rounded-full bg-gradient-to-r ${game.color} text-white font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200`}>
+                    Play Now
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="text-center text-gray-400 text-sm">
+          <p>Built with Next.js, TypeScript, and Tailwind CSS</p>
+          <p className="mt-2">🎯 Challenge yourself and have fun!</p>
+        </div>
+      </div>
     </div>
-  );
+  )
 }
