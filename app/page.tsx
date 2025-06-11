@@ -7,9 +7,8 @@ import FlappyBird from "./games/flappy-bird"
 import Match3Game from "./games/match-3"
 import SpeedRunner from "./games/speed-runner"
 import WhackTheMole from "./games/whack-the-mole"
-import ReskinWizard from "@/components/reskin-wizard"
 
-type GameType = "crossy-road" | "flappy-bird" | "match-3" | "speed-runner" | "whack-the-mole" | "reskin-wizard" | null
+type GameType = "crossy-road" | "flappy-bird" | "match-3" | "speed-runner" | "whack-the-mole" | null
 
 export default function Home() {
   const [currentGame, setCurrentGame] = useState<GameType>(null)
@@ -19,7 +18,6 @@ export default function Home() {
     "match-3": 0,
     "speed-runner": 0,
     "whack-the-mole": 0,
-    "reskin-wizard": 0,
   })
 
   const handleScore = (game: string, score: number) => {
@@ -68,13 +66,6 @@ export default function Home() {
       description: "Hit the moles as they pop up from their holes!",
       emoji: "🔨",
       color: "from-brown-400 to-yellow-500"
-    },
-    {
-      id: "reskin-wizard" as const,
-      title: "Reskin Wizard",
-      description: "Create custom game assets with AI and export your own game!",
-      emoji: "🎨",
-      color: "from-blue-400 to-purple-500"
     }
   ]
 
@@ -90,8 +81,6 @@ export default function Home() {
         return <SpeedRunner onBack={handleBack} onScore={(score) => handleScore("speed-runner", score)} />
       case "whack-the-mole":
         return <WhackTheMole onBack={handleBack} onScore={(score) => handleScore("whack-the-mole", score)} />
-      case "reskin-wizard":
-        return <ReskinWizard onBack={handleBack} />
       default:
         return null
     }
@@ -130,17 +119,10 @@ export default function Home() {
               <CardContent className="relative z-10">
                 <p className="text-gray-300 mb-4 text-center">{game.description}</p>
                 <div className="text-center">
-                  {game.id !== "reskin-wizard" && (
-                    <>
-                      <div className="text-sm text-gray-400 mb-2">High Score</div>
-                      <div className="text-2xl font-bold text-yellow-400">
-                        {highScores[game.id]?.toLocaleString() || "0"}
-                      </div>
-                    </>
-                  )}
-                  {game.id === "reskin-wizard" && (
-                    <div className="text-sm text-gray-400 mb-2">AI Game Creator</div>
-                  )}
+                  <div className="text-sm text-gray-400 mb-2">High Score</div>
+                  <div className="text-2xl font-bold text-yellow-400">
+                    {highScores[game.id]?.toLocaleString() || "0"}
+                  </div>
                 </div>
                 <div className="mt-4 text-center">
                   <button className={`px-6 py-2 rounded-full bg-gradient-to-r ${game.color} text-white font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200`}>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowLeft, Play, Pause } from "lucide-react"
+import GameReskinPanel from "@/components/game-reskin-panel"
 
 interface FlappyBirdProps {
   onBack: () => void
@@ -251,6 +252,7 @@ export default function FlappyBird({ onBack, onScore }: FlappyBirdProps) {
   const [gameState, setGameState] = useState<"menu" | "playing" | "gameOver">("menu")
   const [score, setScore] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+  const [customAssets, setCustomAssets] = useState<Record<string, string>>({})
 
   const checkCollision = (rect1: CollisionRect, rect2: CollisionRect) => {
     return (
@@ -432,7 +434,7 @@ export default function FlappyBird({ onBack, onScore }: FlappyBirdProps) {
     if (!canvas) return
 
     canvas.width = 800
-    canvas.height = 600
+    canvas.height = 450
 
     let animationId: number
 
@@ -515,11 +517,14 @@ export default function FlappyBird({ onBack, onScore }: FlappyBirdProps) {
     setIsPaused(!isPaused)
   }
 
+  // TODO: implement live asset rendering using customAssets in game rendering
+  console.log('Custom assets available:', customAssets)
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-900 to-pink-900 p-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-red-900 to-pink-900 p-2 sm:p-4 lg:p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
           <Button
             onClick={onBack}
             variant="outline"
@@ -528,18 +533,18 @@ export default function FlappyBird({ onBack, onScore }: FlappyBirdProps) {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Games
           </Button>
-          <h1 className="text-3xl font-bold text-white">Flappy Bird</h1>
-          <div className="text-white text-xl">Score: {score}</div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white text-center">Flappy Bird</h1>
+          <div className="text-white text-lg sm:text-xl">Score: {score}</div>
         </div>
 
-        {/* Game Canvas */}
-        <Card className="bg-black/20 border-white/20">
+        {/* Game Preview at Top */}
+        <Card className="bg-black/20 border-white/20 mb-8">
           <CardContent className="p-4">
             <div className="relative">
               <canvas
                 ref={canvasRef}
                 className="border border-white/20 rounded-lg w-full cursor-pointer"
-                style={{ aspectRatio: "4/3" }}
+                style={{ aspectRatio: "16/9" }}
               />
 
               {/* Game State Overlays */}
@@ -609,12 +614,35 @@ export default function FlappyBird({ onBack, onScore }: FlappyBirdProps) {
         </Card>
 
         {/* Instructions */}
-        <div className="mt-6 text-center text-white/70">
+        <div className="text-center text-white/70 mb-8">
           <p className="text-sm">
             🐦 Click, tap, or press Space to flap • 🚫 Avoid pipes and ground • ⚡ Speed increases every 5 points • 🏆
             Reach milestones for achievements
           </p>
         </div>
+
+        {/* AI Reskin Features Below */}
+        <GameReskinPanel
+          gameId="flappy-bird"
+          gameName="Flappy Bird"
+          assetSlots={[
+            { id: "background", name: "Background", defaultPrompt: "Sky background scene", dimensions: { width: 800, height: 450 } },
+            { id: "bird", name: "Bird", defaultPrompt: "Flying bird character", dimensions: { width: 30, height: 30 } },
+            { id: "pipe", name: "Pipe", defaultPrompt: "Obstacle pipes", dimensions: { width: 60, height: 400 } },
+            { id: "ground", name: "Ground", defaultPrompt: "Ground/floor texture", dimensions: { width: 800, height: 20 } },
+          ]}
+          gameParams={[
+            { id: "gravity", name: "Gravity", type: "slider", min: 0.2, max: 1.5, step: 0.1, defaultValue: 0.6, value: 0.6 },
+            { id: "jumpPower", name: "Jump Power", type: "slider", min: 8, max: 20, step: 1, defaultValue: 12, value: 12 },
+            { id: "pipeSpeed", name: "Pipe Speed", type: "slider", min: 1, max: 8, step: 0.5, defaultValue: 3, value: 3 },
+            { id: "pipeGap", name: "Pipe Gap", type: "slider", min: 80, max: 200, step: 10, defaultValue: 120, value: 120 },
+          ]}
+          isOpen={true}
+          onClose={() => {}}
+          onAssetsChanged={(assets) => setCustomAssets(assets)}
+          mode="inline"
+          theme="flappy-bird"
+        />
       </div>
     </div>
   )

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowLeft, Play, Pause, Zap, Shield, Star } from "lucide-react"
+import GameReskinPanel from "@/components/game-reskin-panel"
 
 interface SpeedRunnerProps {
   onBack: () => void
@@ -282,6 +283,10 @@ export default function SpeedRunner({ onBack, onScore }: SpeedRunnerProps) {
   const [gameState, setGameState] = useState<"menu" | "playing" | "gameOver">("menu")
   const [score, setScore] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+  const [customAssets, setCustomAssets] = useState<Record<string, string>>({})
+
+  // TODO: implement asset rendering
+  void customAssets
 
   const checkCollision = (rect1: CollisionRect, rect2: CollisionRect) => {
     return (
@@ -475,7 +480,7 @@ export default function SpeedRunner({ onBack, onScore }: SpeedRunnerProps) {
     if (!canvas) return
 
     canvas.width = 800
-    canvas.height = 400
+    canvas.height = 450
 
     let animationId: number
 
@@ -566,9 +571,9 @@ export default function SpeedRunner({ onBack, onScore }: SpeedRunnerProps) {
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-yellow-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto p-6">
+      <div className="relative z-10 max-w-7xl mx-auto p-2 sm:p-4 lg:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
           <Button
             onClick={onBack}
             variant="outline"
@@ -579,8 +584,8 @@ export default function SpeedRunner({ onBack, onScore }: SpeedRunnerProps) {
           </Button>
 
           <div className="text-center">
-            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-orange-200 to-white flex items-center justify-center gap-3">
-              <Zap className="h-8 w-8 text-orange-400" />
+            <h1 className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-orange-200 to-white flex items-center justify-center gap-3">
+              <Zap className="h-6 w-6 sm:h-8 sm:w-8 text-orange-400" />
               Speed Runner
             </h1>
             <div className="h-1 w-32 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full mx-auto mt-2"></div>
@@ -592,14 +597,14 @@ export default function SpeedRunner({ onBack, onScore }: SpeedRunnerProps) {
           </div>
         </div>
 
-        {/* Game Canvas */}
-        <Card className="bg-white/5 backdrop-blur-xl border-white/10 shadow-2xl">
+        {/* Game Preview at Top */}
+        <Card className="bg-white/5 backdrop-blur-xl border-white/10 shadow-2xl mb-8">
           <CardContent className="p-6">
             <div className="relative">
               <canvas
                 ref={canvasRef}
                 className="border border-white/20 rounded-xl w-full shadow-2xl"
-                style={{ aspectRatio: "2/1" }}
+                style={{ aspectRatio: "16/9" }}
               />
 
               {/* Game State Overlays */}
@@ -695,7 +700,7 @@ export default function SpeedRunner({ onBack, onScore }: SpeedRunnerProps) {
         </Card>
 
         {/* Instructions */}
-        <div className="mt-8 text-center">
+        <div className="text-center mb-8">
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-6 max-w-4xl mx-auto">
             <h3 className="text-xl font-bold text-white mb-4">How to Play</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-300">
@@ -720,6 +725,29 @@ export default function SpeedRunner({ onBack, onScore }: SpeedRunnerProps) {
             </div>
           </div>
         </div>
+
+        {/* AI Reskin Features Below */}
+        <GameReskinPanel
+          gameId="speed-runner"
+          gameName="Speed Runner"
+          assetSlots={[
+            { id: "background", name: "Background", defaultPrompt: "endless runner game background with futuristic cityscape", dimensions: { width: 800, height: 450 } },
+            { id: "player", name: "Player", defaultPrompt: "futuristic speed runner character, athletic and fast", dimensions: { width: 40, height: 60 } },
+            { id: "obstacle", name: "Obstacle", defaultPrompt: "futuristic obstacle for speed runner game", dimensions: { width: 50, height: 80 } },
+            { id: "powerup", name: "Power-up", defaultPrompt: "glowing power-up item for speed runner game", dimensions: { width: 30, height: 30 } },
+          ]}
+          gameParams={[
+            { id: "gameSpeed", name: "Game Speed", type: "slider", min: 2, max: 8, step: 0.5, defaultValue: 4, value: 4 },
+            { id: "jumpHeight", name: "Jump Height", type: "slider", min: 10, max: 25, step: 1, defaultValue: 18, value: 18 },
+            { id: "obstacleSpacing", name: "Obstacle Spacing", type: "slider", min: 100, max: 400, step: 25, defaultValue: 250, value: 250 },
+            { id: "powerUpChance", name: "Power-up Chance (%)", type: "slider", min: 5, max: 30, step: 5, defaultValue: 15, value: 15 },
+          ]}
+          isOpen={true}
+          onClose={() => {}}
+          onAssetsChanged={(assets) => setCustomAssets(assets)}
+          mode="inline"
+          theme="speed-runner"
+        />
       </div>
     </div>
   )

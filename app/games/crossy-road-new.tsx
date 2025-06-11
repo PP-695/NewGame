@@ -485,7 +485,7 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
   const [isPaused, setIsPaused] = useState(false)
   const [customAssets, setCustomAssets] = useState<Record<string, string>>({})
 
-  // Use customAssets to avoid TypeScript warning - TODO: implement asset rendering
+  // TODO: implement live asset rendering using customAssets in game rendering
   console.log('Custom assets available:', customAssets)
 
   const checkCollision = (rect1: CollisionRect | null, rect2: CollisionRect | null) => {
@@ -728,7 +728,7 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
     if (!canvas) return
 
     canvas.width = 800
-    canvas.height = 450
+    canvas.height = 600
 
     let animationId: number
 
@@ -797,9 +797,9 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto p-2 sm:p-4 lg:p-6">
+      <div className="relative z-10 max-w-7xl mx-auto p-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+        <div className="flex items-center justify-between mb-8">
           <Button
             onClick={onBack}
             variant="outline"
@@ -810,179 +810,186 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
           </Button>
 
           <div className="text-center">
-            <h1 className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-white flex items-center justify-center gap-3">
-              <Car className="h-6 w-6 sm:h-8 sm:w-8 text-cyan-400" />
+            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-white flex items-center justify-center gap-3">
+              <Car className="h-8 w-8 text-cyan-400" />
               Crossy Road
             </h1>
             <div className="h-1 w-32 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full mx-auto mt-2"></div>
           </div>
 
           <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl px-4 py-2">
-            <div className="text-white text-base sm:text-lg font-bold">{score}</div>
+            <div className="text-white text-lg font-bold">{score}</div>
             <div className="text-cyan-300 text-xs">Score</div>
           </div>
         </div>
 
-        {/* Game Preview at Top */}
-        <Card className="bg-white/5 backdrop-blur-xl border-white/10 shadow-2xl mb-8">
-          <CardContent className="p-6">
-            <div className="relative">
-              <canvas
-                ref={canvasRef}
-                className="border border-white/20 rounded-xl w-full shadow-2xl"
-                style={{ aspectRatio: "16/9" }}
-              />
+        {/* Game Layout with Integrated Reskin Panel */}
+        <div className="flex gap-6">
+          {/* Game Canvas */}
+          <div className="flex-1">
+            <Card className="bg-white/5 backdrop-blur-xl border-white/10 shadow-2xl">
+              <CardContent className="p-6">
+                <div className="relative">
+                  <canvas
+                    ref={canvasRef}
+                    className="border border-white/20 rounded-xl w-full shadow-2xl"
+                    style={{ aspectRatio: "4/3" }}
+                  />
 
-              {/* Game State Overlays */}
-              {gameState === "menu" && (
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center rounded-xl">
-                  <div className="text-center text-white max-w-md">
-                    <div className="bg-gradient-to-r from-cyan-500 to-blue-500 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
-                      <Car className="h-10 w-10 text-white" />
-                    </div>
-                    <h2 className="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-cyan-200">
-                      Crossy Road
-                    </h2>
-                    <p className="text-lg mb-6 text-slate-300 leading-relaxed">
-                      Cross busy roads and rivers! Avoid cars and hop on logs to survive.
-                    </p>
-                    <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
-                      <div className="bg-white/10 rounded-lg p-3">
-                        <Car className="h-5 w-5 text-red-400 mx-auto mb-1" />
-                        <div>Avoid traffic on roads</div>
+                  {/* Game State Overlays */}
+                  {gameState === "menu" && (
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center rounded-xl">
+                      <div className="text-center text-white max-w-md">
+                        <div className="bg-gradient-to-r from-cyan-500 to-blue-500 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                          <Car className="h-10 w-10 text-white" />
+                        </div>
+                        <h2 className="text-5xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-300">
+                          Crossy Road
+                        </h2>
+                        <p className="text-lg mb-6 text-cyan-100 leading-relaxed">
+                          Navigate through traffic, hop on logs, and avoid obstacles in this endless crossing adventure!
+                        </p>
+                        <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 mb-6 border border-white/20">
+                          <p className="text-sm text-cyan-200 mb-2 font-semibold">🎮 Game Controls:</p>
+                          <div className="grid grid-cols-2 gap-2 text-xs text-cyan-300">
+                            <div>↑↓←→ or WASD</div>
+                            <div>Mouse Click</div>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={startGame}
+                          size="lg"
+                          className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white border-0 shadow-2xl hover:scale-105 transition-all duration-300 font-bold"
+                        >
+                          <Play className="h-5 w-5 mr-2" />
+                          Start Adventure
+                        </Button>
                       </div>
-                      <div className="bg-white/10 rounded-lg p-3">
-                        <Shield className="h-5 w-5 text-blue-400 mx-auto mb-1" />
-                        <div>Hop on logs in rivers</div>
+                    </div>
+                  )}
+
+                  {gameState === "gameOver" && (
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center rounded-xl">
+                      <div className="text-center text-white max-w-md">
+                        <div className="bg-red-500/20 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-red-500/30">
+                          <Car className="h-10 w-10 text-red-400" />
+                        </div>
+                        <h2 className="text-4xl font-bold mb-4 text-red-400">Game Over!</h2>
+                        <div className="bg-white/10 backdrop-blur-xl rounded-xl p-6 mb-6 border border-white/20">
+                          <p className="text-2xl mb-2 text-cyan-300">Final Score</p>
+                          <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-300">
+                            {score}
+                          </p>
+                          {gameStateRef.current.bestScore > 0 && (
+                            <p className="text-lg mt-3 text-amber-400">
+                              Best: {gameStateRef.current.bestScore} 🏆
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          onClick={startGame}
+                          size="lg"
+                          className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white border-0 shadow-2xl hover:scale-105 transition-all duration-300 font-bold"
+                        >
+                          <Play className="h-5 w-5 mr-2" />
+                          Play Again
+                        </Button>
                       </div>
                     </div>
-                    <Button
-                      onClick={startGame}
-                      size="lg"
-                      className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white border-0 font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
-                    >
-                      <Play className="h-5 w-5 mr-2" />
-                      Start Crossing
-                    </Button>
-                  </div>
-                </div>
-              )}
+                  )}
 
-              {gameState === "gameOver" && (
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center rounded-xl">
-                  <div className="text-center text-white max-w-md">
-                    <div className="bg-gradient-to-r from-red-500 to-orange-500 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
-                      <Zap className="h-10 w-10 text-white" />
+                  {gameState === "playing" && (
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      <Button
+                        onClick={togglePause}
+                        variant="outline"
+                        size="sm"
+                        className="bg-white/10 backdrop-blur-xl border-white/20 text-white hover:bg-white/20"
+                      >
+                        {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                      </Button>
                     </div>
-                    <h2 className="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-red-200">
-                      Game Over!
-                    </h2>
-                    <div className="bg-white/10 rounded-xl p-6 mb-6">
-                      <div className="text-3xl font-bold text-cyan-400 mb-2">{score}</div>
-                      <div className="text-slate-300">Final Score</div>
-                      {gameStateRef.current.bestScore > 0 && (
-                        <div className="text-sm text-yellow-400 mt-2">Best: {gameStateRef.current.bestScore}</div>
-                      )}
+                  )}
+
+                  {isPaused && gameState === "playing" && (
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center rounded-xl">
+                      <div className="text-center text-white">
+                        <h2 className="text-3xl font-bold mb-4 text-cyan-300">Paused</h2>
+                        <Button
+                          onClick={togglePause}
+                          size="lg"
+                          className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white border-0 shadow-2xl hover:scale-105 transition-all duration-300 font-bold"
+                        >
+                          <Play className="h-5 w-5 mr-2" />
+                          Resume
+                        </Button>
+                      </div>
                     </div>
-                    <Button
-                      onClick={startGame}
-                      size="lg"
-                      className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white border-0 font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
-                    >
-                      <Play className="h-5 w-5 mr-2" />
-                      Try Again
-                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Instructions */}
+            <div className="mt-6 text-center">
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
+                <h3 className="text-lg font-bold text-white mb-3 flex items-center justify-center gap-2">
+                  <Zap className="h-5 w-5 text-cyan-400" />
+                  Game Tips
+                </h3>
+                <div className="grid grid-cols-2 gap-3 text-sm text-cyan-200">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-cyan-500/20 rounded-lg p-2">
+                      <div className="w-4 h-4 bg-white rounded"></div>
+                    </div>
+                    <span>Move in all directions</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="bg-cyan-500/20 rounded-lg p-2">
+                      <Car className="h-4 w-4 text-red-400" />
+                    </div>
+                    <span>Avoid cars on roads</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="bg-cyan-500/20 rounded-lg p-2">
+                      <div className="w-4 h-2 bg-amber-600 rounded"></div>
+                    </div>
+                    <span>Jump on logs in rivers</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="bg-cyan-500/20 rounded-lg p-2">
+                      <Shield className="h-4 w-4 text-blue-400" />
+                    </div>
+                    <span>Collect shields for protection</span>
                   </div>
                 </div>
-              )}
-
-              {gameState === "playing" && (
-                <div className="absolute top-4 right-4">
-                  <Button
-                    onClick={togglePause}
-                    variant="outline"
-                    size="sm"
-                    className="bg-white/10 backdrop-blur-xl border-white/20 text-white hover:bg-white/20 hover:scale-105 transition-all duration-300"
-                  >
-                    {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-                  </Button>
-                </div>
-              )}
-
-              {isPaused && gameState === "playing" && (
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center rounded-xl">
-                  <div className="text-center text-white">
-                    <h2 className="text-3xl font-bold mb-6">Game Paused</h2>
-                    <Button
-                      onClick={togglePause}
-                      size="lg"
-                      className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white border-0 font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
-                    >
-                      <Play className="h-5 w-5 mr-2" />
-                      Resume
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Instructions */}
-        <div className="text-center mb-8">
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-6 max-w-4xl mx-auto">
-            <h3 className="text-xl font-bold text-white mb-4">How to Play</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-slate-300">
-              <div className="flex items-center gap-3">
-                <div className="bg-cyan-500/20 rounded-lg p-2">
-                  <kbd className="bg-white/20 px-2 py-1 rounded text-xs">WASD</kbd>
-                </div>
-                <span>Move in all directions</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="bg-cyan-500/20 rounded-lg p-2">
-                  <Car className="h-4 w-4 text-red-400" />
-                </div>
-                <span>Avoid cars on roads</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="bg-cyan-500/20 rounded-lg p-2">
-                  <div className="w-4 h-2 bg-amber-600 rounded"></div>
-                </div>
-                <span>Jump on logs in rivers</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="bg-cyan-500/20 rounded-lg p-2">
-                  <Shield className="h-4 w-4 text-blue-400" />
-                </div>
-                <span>Collect shields for protection</span>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* AI Reskin Features Below */}
-        <GameReskinPanel
-          gameId="crossy-road"
-          gameName="Crossy Road"
-          assetSlots={[
-            { id: "background", name: "Background", defaultPrompt: "World background scene", dimensions: { width: 800, height: 450 } },
-            { id: "player", name: "Player", defaultPrompt: "Main character", dimensions: { width: 30, height: 30 } },
-            { id: "car", name: "Car", defaultPrompt: "Road vehicles", dimensions: { width: 60, height: 30 } },
-            { id: "log", name: "Log", defaultPrompt: "River logs to jump on", dimensions: { width: 120, height: 20 } },
-          ]}
-          gameParams={[
-            { id: "playerSpeed", name: "Player Speed", type: "slider", min: 0.1, max: 0.5, step: 0.05, defaultValue: 0.2, value: 0.2 },
-            { id: "carSpeed", name: "Car Speed", type: "slider", min: 1, max: 6, step: 0.5, defaultValue: 3, value: 3 },
-            { id: "logSpeed", name: "Log Speed", type: "slider", min: 0.5, max: 3, step: 0.25, defaultValue: 1.5, value: 1.5 },
-            { id: "difficulty", name: "Difficulty", type: "slider", min: 0.5, max: 3, step: 0.1, defaultValue: 1, value: 1 },
-          ]}
-          isOpen={true}
-          onClose={() => {}}
-          onAssetsChanged={(assets) => setCustomAssets(assets)}
-          mode="inline"
-          theme="crossy-road"
-        />
+          {/* Integrated Reskin Panel */}
+          <div className="w-80">
+            <GameReskinPanel
+              gameId="crossy-road"
+              gameName="Crossy Road"
+              assetSlots={[
+                { id: "background", name: "Background", defaultPrompt: "World background scene", dimensions: { width: 800, height: 600 } },
+                { id: "player", name: "Player", defaultPrompt: "Main character", dimensions: { width: 30, height: 30 } },
+                { id: "car", name: "Car", defaultPrompt: "Road vehicles", dimensions: { width: 60, height: 30 } },
+                { id: "log", name: "Log", defaultPrompt: "River logs to jump on", dimensions: { width: 120, height: 20 } },
+              ]}
+              gameParams={[
+                { id: "playerSpeed", name: "Player Speed", type: "slider", min: 0.1, max: 0.5, step: 0.05, defaultValue: 0.2, value: 0.2 },
+                { id: "carSpeed", name: "Car Speed", type: "slider", min: 1, max: 6, step: 0.5, defaultValue: 3, value: 3 },
+                { id: "logSpeed", name: "Log Speed", type: "slider", min: 0.5, max: 3, step: 0.25, defaultValue: 1.5, value: 1.5 },
+                { id: "difficulty", name: "Difficulty", type: "slider", min: 0.5, max: 3, step: 0.1, defaultValue: 1, value: 1 },
+              ]}
+              isOpen={true}
+              onClose={() => {}}
+              onAssetsChanged={(assets) => setCustomAssets(assets)}
+            />
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowLeft, Play, Pause } from "lucide-react"
+import GameReskinPanel from "@/components/game-reskin-panel"
 
 interface WhackTheMoleProps {
   onBack: () => void
@@ -35,7 +36,7 @@ class Mole {
     this.points = 10
   }
 
-  update(deltaTime: number, _gameTime: number) {
+  update(deltaTime: number) {
     if (this.isVisible) {
       this.visibilityTimer += deltaTime
       if (this.visibilityTimer >= this.maxVisibilityTime) {
@@ -201,7 +202,7 @@ class MoleAI {
     // Update all moles and check for missed moles
     let missedMoles = 0
     this.moles.forEach((mole) => {
-      if (mole.update(deltaTime, this.gameTime)) {
+      if (mole.update(deltaTime)) {
         if (mole.type === "normal" || mole.type === "golden") {
           missedMoles++
         }
@@ -257,6 +258,10 @@ export default function WhackTheMole({ onBack, onScore }: WhackTheMoleProps) {
   const [score, setScore] = useState(0)
   const [timeLeft, setTimeLeft] = useState(60)
   const [isPaused, setIsPaused] = useState(false)
+  const [customAssets, setCustomAssets] = useState<Record<string, string>>({})
+
+  // TODO: implement asset rendering
+  void customAssets
 
   const initializeGame = () => {
     const canvas = canvasRef.current
@@ -430,8 +435,8 @@ export default function WhackTheMole({ onBack, onScore }: WhackTheMoleProps) {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    canvas.width = 500
-    canvas.height = 400
+    canvas.width = 640
+    canvas.height = 360
 
     initializeGame()
 
@@ -484,10 +489,10 @@ export default function WhackTheMole({ onBack, onScore }: WhackTheMoleProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-900 to-blue-900 p-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-green-900 to-blue-900 p-2 sm:p-4 lg:p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
           <Button
             onClick={onBack}
             variant="outline"
@@ -496,20 +501,20 @@ export default function WhackTheMole({ onBack, onScore }: WhackTheMoleProps) {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Games
           </Button>
-          <h1 className="text-3xl font-bold text-white">Whack-the-Mole</h1>
-          <div className="text-white text-xl">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white text-center">Whack-the-Mole</h1>
+          <div className="text-white text-lg sm:text-xl">
             Score: {score} | Time: {timeLeft}s
           </div>
         </div>
 
-        {/* Game Canvas */}
-        <Card className="bg-black/20 border-white/20">
+        {/* Game Preview at Top */}
+        <Card className="bg-black/20 border-white/20 mb-8">
           <CardContent className="p-4">
             <div className="relative flex justify-center">
               <canvas
                 ref={canvasRef}
                 className="border border-white/20 rounded-lg cursor-crosshair"
-                style={{ maxWidth: "100%", height: "auto" }}
+                style={{ maxWidth: "100%", height: "auto", aspectRatio: "16/9" }}
               />
 
               {/* Game State Overlays */}
@@ -571,12 +576,35 @@ export default function WhackTheMole({ onBack, onScore }: WhackTheMoleProps) {
         </Card>
 
         {/* Instructions */}
-        <div className="mt-6 text-center text-white/70">
+        <div className="text-center text-white/70 mb-8">
           <p className="text-sm">
             🎯 Click on moles as they appear • ⏱️ 60 seconds to get the highest score • 🤖 AI adjusts difficulty
             automatically
           </p>
         </div>
+
+        {/* AI Reskin Features Below */}
+        <GameReskinPanel
+          gameId="whack-the-mole"
+          gameName="Whack-the-Mole"
+          assetSlots={[
+            { id: "background", name: "Background", defaultPrompt: "whack-a-mole game background with grass and dirt", dimensions: { width: 640, height: 360 } },
+            { id: "mole", name: "Mole", defaultPrompt: "cute cartoon mole character for whack-a-mole game", dimensions: { width: 60, height: 60 } },
+            { id: "hole", name: "Hole", defaultPrompt: "dirt hole for mole to pop out of in whack-a-mole game", dimensions: { width: 80, height: 40 } },
+            { id: "hammer", name: "Hammer", defaultPrompt: "cartoon mallet or hammer for whack-a-mole game", dimensions: { width: 40, height: 60 } },
+          ]}
+          gameParams={[
+            { id: "gameTime", name: "Game Time (s)", type: "slider", min: 30, max: 120, step: 15, defaultValue: 60, value: 60 },
+            { id: "moleSpeed", name: "Mole Speed", type: "slider", min: 0.5, max: 3, step: 0.25, defaultValue: 1.5, value: 1.5 },
+            { id: "spawnRate", name: "Spawn Rate", type: "slider", min: 500, max: 3000, step: 250, defaultValue: 1500, value: 1500 },
+            { id: "difficulty", name: "Difficulty", type: "slider", min: 1, max: 5, step: 1, defaultValue: 3, value: 3 },
+          ]}
+          isOpen={true}
+          onClose={() => {}}
+          onAssetsChanged={(assets) => setCustomAssets(assets)}
+          mode="inline"
+          theme="whack-the-mole"
+        />
       </div>
     </div>
   )

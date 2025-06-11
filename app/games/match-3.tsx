@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowLeft, Play, Pause, Lightbulb } from "lucide-react"
+import GameReskinPanel from "@/components/game-reskin-panel"
 
 interface Match3Props {
   onBack: () => void
@@ -310,6 +311,81 @@ export default function Match3Game({ onBack, onScore }: Match3Props) {
   const [moves, setMoves] = useState(30)
   const [targetScore, setTargetScore] = useState(1000)
   const [isPaused, setIsPaused] = useState(false)
+  const [customAssets, setCustomAssets] = useState<Record<string, string>>({})
+
+  // TODO: implement asset rendering
+  void customAssets
+
+  // Reskin panel configuration
+  const assetSlots = [
+    {
+      id: "background",
+      name: "Background",
+      defaultPrompt: "magical gem matching game background with sparkles and mystical atmosphere",
+      dimensions: { width: 800, height: 600 }
+    },
+    {
+      id: "red_gem",
+      name: "Red Gem",
+      defaultPrompt: "beautiful red ruby gem crystal for match-3 game, sparkling and faceted",
+      dimensions: { width: 48, height: 48 }
+    },
+    {
+      id: "blue_gem",
+      name: "Blue Gem",
+      defaultPrompt: "brilliant blue sapphire gem crystal for match-3 game, sparkling and faceted",
+      dimensions: { width: 48, height: 48 }
+    },
+    {
+      id: "green_gem",
+      name: "Green Gem",
+      defaultPrompt: "vibrant green emerald gem crystal for match-3 game, sparkling and faceted",
+      dimensions: { width: 48, height: 48 }
+    }
+  ]
+
+  const gameParams = [
+    {
+      id: "gridSize",
+      name: "Grid Size",
+      type: 'slider' as const,
+      min: 6,
+      max: 10,
+      step: 1,
+      defaultValue: 8,
+      value: 8
+    },
+    {
+      id: "movesPerLevel",
+      name: "Moves Per Level",
+      type: 'slider' as const,
+      min: 20,
+      max: 50,
+      step: 5,
+      defaultValue: 30,
+      value: 30
+    },
+    {
+      id: "specialGemChance",
+      name: "Special Gem Chance (%)",
+      type: 'slider' as const,
+      min: 5,
+      max: 30,
+      step: 5,
+      defaultValue: 10,
+      value: 10
+    },
+    {
+      id: "targetScore",
+      name: "Target Score",
+      type: 'slider' as const,
+      min: 500,
+      max: 2000,
+      step: 250,
+      defaultValue: 1000,
+      value: 1000
+    }
+  ]
 
   const createRandomGem = (x: number, y: number): Gem => {
     const game = gameStateRef.current
@@ -538,6 +614,74 @@ export default function Match3Game({ onBack, onScore }: Match3Props) {
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null)
   const [dragEnd, setDragEnd] = useState<{ x: number; y: number } | null>(null)
 
+  const swapGems = useCallback((x1: number, y1: number, x2: number, y2: number) => {
+    const game = gameStateRef.current
+
+    // Perform swap
+    const temp = game.grid[y1][x1]
+    game.grid[y1][x1] = game.grid[y2][x2]
+    game.grid[y2][x2] = temp
+
+    if (game.grid[y1][x1]) {
+      game.grid[y1][x1]!.setTarget(x1, y1)
+    }
+    if (game.grid[y2][x2]) {
+      game.grid[y2][x2]!.setTarget(x2, y2)
+    }
+
+    // Check for matches after animation completes
+    setTimeout(() => {
+      const matchesFound = findAndRemoveMatches()
+      if (matchesFound > 0) {
+        // Decrease moves only if match was made
+        game.moves--
+        setMoves(game.moves)
+
+        game.cascadeMultiplier = 1
+        updateScore(matchesFound, game.cascadeMultiplier)
+
+        setTimeout(() => {
+          applyGravity()
+
+          // Check for cascade matches
+          setTimeout(() => {
+            let cascadeMatches = findAndRemoveMatches()
+            while (cascadeMatches > 0) {
+              game.cascadeMultiplier++
+              updateScore(cascadeMatches, game.cascadeMultiplier)
+              applyGravity()
+              cascadeMatches = findAndRemoveMatches()
+            }
+
+            // Check win/lose conditions
+            if (game.moves <= 0) {
+              if (game.score >= game.targetScore) {
+                game.gameState = "levelComplete"
+                setGameState("levelComplete")
+              } else {
+                game.gameState = "gameOver"
+                setGameState("gameOver")
+                onScore(game.score)
+              }
+            }
+          }, 300)
+        }, 200)
+      } else {
+        // No matches, swap back
+        const temp = game.grid[y1][x1]
+        game.grid[y1][x1] = game.grid[y2][x2]
+        game.grid[y2][x2] = temp
+
+        if (game.grid[y1][x1]) {
+          game.grid[y1][x1]!.setTarget(x1, y1)
+        }
+        if (game.grid[y2][x2]) {
+          game.grid[y2][x2]!.setTarget(x2, y2)
+        }
+      }
+    }, 350) // Wait for swap animation to complete
+  }, [findAndRemoveMatches, applyGravity, updateScore, setMoves, setGameState, onScore])
+
   const handleMouseDown = useCallback((event: MouseEvent) => {
     const canvas = canvasRef.current
     if (!canvas || gameStateRef.current.gameState !== "playing") return
@@ -654,74 +798,6 @@ export default function Match3Game({ onBack, onScore }: Match3Props) {
     },
     [handleMouseUp],
   )
-
-  const swapGems = (x1: number, y1: number, x2: number, y2: number) => {
-    const game = gameStateRef.current
-
-    // Perform swap
-    const temp = game.grid[y1][x1]
-    game.grid[y1][x1] = game.grid[y2][x2]
-    game.grid[y2][x2] = temp
-
-    if (game.grid[y1][x1]) {
-      game.grid[y1][x1]!.setTarget(x1, y1)
-    }
-    if (game.grid[y2][x2]) {
-      game.grid[y2][x2]!.setTarget(x2, y2)
-    }
-
-    // Check for matches after animation completes
-    setTimeout(() => {
-      const matchesFound = findAndRemoveMatches()
-      if (matchesFound > 0) {
-        // Decrease moves only if match was made
-        game.moves--
-        setMoves(game.moves)
-
-        game.cascadeMultiplier = 1
-        updateScore(matchesFound, game.cascadeMultiplier)
-
-        setTimeout(() => {
-          applyGravity()
-
-          // Check for cascade matches
-          setTimeout(() => {
-            let cascadeMatches = findAndRemoveMatches()
-            while (cascadeMatches > 0) {
-              game.cascadeMultiplier++
-              updateScore(cascadeMatches, game.cascadeMultiplier)
-              applyGravity()
-              cascadeMatches = findAndRemoveMatches()
-            }
-
-            // Check win/lose conditions
-            if (game.moves <= 0) {
-              if (game.score >= game.targetScore) {
-                game.gameState = "levelComplete"
-                setGameState("levelComplete")
-              } else {
-                game.gameState = "gameOver"
-                setGameState("gameOver")
-                onScore(game.score)
-              }
-            }
-          }, 300)
-        }, 200)
-      } else {
-        // No matches, swap back
-        const temp = game.grid[y1][x1]
-        game.grid[y1][x1] = game.grid[y2][x2]
-        game.grid[y2][x2] = temp
-
-        if (game.grid[y1][x1]) {
-          game.grid[y1][x1]!.setTarget(x1, y1)
-        }
-        if (game.grid[y2][x2]) {
-          game.grid[y2][x2]!.setTarget(x2, y2)
-        }
-      }
-    }, 350) // Wait for swap animation to complete
-  }
 
   const nextLevel = () => {
     const game = gameStateRef.current
@@ -955,10 +1031,10 @@ export default function Match3Game({ onBack, onScore }: Match3Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-pink-900 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-pink-900 p-2 sm:p-4 lg:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
           <Button
             onClick={onBack}
             variant="outline"
@@ -967,12 +1043,12 @@ export default function Match3Game({ onBack, onScore }: Match3Props) {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Games
           </Button>
-          <h1 className="text-3xl font-bold text-white">Match-3 Puzzle</h1>
-          <div className="text-white text-xl">Level {level}</div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white text-center">Match-3 Puzzle</h1>
+          <div className="text-white text-lg sm:text-xl">Level {level}</div>
         </div>
 
-        {/* Game Layout */}
-        <div className="flex gap-6">
+        {/* Game Preview at Top */}
+        <div className="flex flex-col lg:flex-row gap-6 mb-8">
           {/* Game Board */}
           <Card className="bg-black/20 border-white/20 flex-shrink-0">
             <CardContent className="p-4">
@@ -1142,23 +1218,36 @@ export default function Match3Game({ onBack, onScore }: Match3Props) {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Instructions */}
-            <Card className="bg-black/20 border-white/20">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-bold text-white mb-3">How to Play</h3>
-                <div className="space-y-2 text-sm text-white/70">
-                  <div>💎 Click and drag gems to swap</div>
-                  <div>🔄 Drag to adjacent gem to make moves</div>
-                  <div>💡 Use hint button for AI suggestions</div>
-                  <div>⚡ Chain matches for bonus points</div>
-                  <div>💣 Special gems have unique effects</div>
-                  <div>📱 Touch and drag on mobile devices</div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
+
+        {/* Instructions */}
+        <Card className="bg-black/20 border-white/20 mb-8">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-bold text-white mb-3">How to Play</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-white/70">
+              <div>💎 Click and drag gems to swap</div>
+              <div>🔄 Drag to adjacent gem to make moves</div>
+              <div>💡 Use hint button for AI suggestions</div>
+              <div>⚡ Chain matches for bonus points</div>
+              <div>💣 Special gems have unique effects</div>
+              <div>📱 Touch and drag on mobile devices</div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* AI Reskin Features Below */}
+        <GameReskinPanel
+          gameId="match-3"
+          gameName="Match-3 Puzzle"
+          assetSlots={assetSlots}
+          gameParams={gameParams}
+          isOpen={true}
+          onClose={() => {}}
+          onAssetsChanged={(assets) => setCustomAssets(assets)}
+          mode="inline"
+          theme="match-3"
+        />
       </div>
     </div>
   )
