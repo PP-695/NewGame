@@ -28,15 +28,20 @@ class Bird {
   rotation: number
   maxVelocity: number
 
-  constructor(x: number, y: number) {
+  constructor(x: number, y: number, gravity = 0.6, jumpPower = 12) {
     this.x = x
     this.y = y
     this.velocity = 0
     this.size = 30
-    this.gravity = 0.6
-    this.jumpPower = -12
+    this.gravity = gravity
+    this.jumpPower = -Math.abs(jumpPower) // Ensure negative for upward movement
     this.rotation = 0
     this.maxVelocity = 10
+  }
+
+  updateParams(gravity: number, jumpPower: number) {
+    this.gravity = gravity
+    this.jumpPower = -Math.abs(jumpPower)
   }
 
   update() {
@@ -59,45 +64,54 @@ class Bird {
     this.velocity = this.jumpPower
   }
 
-  render(ctx: CanvasRenderingContext2D) {
+  render(ctx: CanvasRenderingContext2D, customImage?: HTMLImageElement) {
     ctx.save()
 
     // Translate to bird center and rotate
     ctx.translate(this.x, this.y)
     ctx.rotate((this.rotation * Math.PI) / 180)
 
-    // Bird body
-    ctx.fillStyle = "#FFD700"
-    ctx.beginPath()
-    ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2)
-    ctx.fill()
+    if (customImage) {
+      // Draw custom bird image
+      const scale = this.size / Math.max(customImage.width, customImage.height)
+      const width = customImage.width * scale
+      const height = customImage.height * scale
+      ctx.drawImage(customImage, -width/2, -height/2, width, height)
+    } else {
+      // Default bird rendering
+      // Bird body
+      ctx.fillStyle = "#FFD700"
+      ctx.beginPath()
+      ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2)
+      ctx.fill()
 
-    // Bird wing (animated)
-    const wingOffset = Math.sin(Date.now() * 0.02) * 3
-    ctx.fillStyle = "#FFA500"
-    ctx.beginPath()
-    ctx.ellipse(-5, wingOffset, 8, 12, 0, 0, Math.PI * 2)
-    ctx.fill()
+      // Bird wing (animated)
+      const wingOffset = Math.sin(Date.now() * 0.02) * 3
+      ctx.fillStyle = "#FFA500"
+      ctx.beginPath()
+      ctx.ellipse(-5, wingOffset, 8, 12, 0, 0, Math.PI * 2)
+      ctx.fill()
 
-    // Bird eye
-    ctx.fillStyle = "white"
-    ctx.beginPath()
-    ctx.arc(5, -5, 5, 0, Math.PI * 2)
-    ctx.fill()
+      // Bird eye
+      ctx.fillStyle = "white"
+      ctx.beginPath()
+      ctx.arc(5, -5, 5, 0, Math.PI * 2)
+      ctx.fill()
 
-    ctx.fillStyle = "black"
-    ctx.beginPath()
-    ctx.arc(7, -5, 2, 0, Math.PI * 2)
-    ctx.fill()
+      ctx.fillStyle = "black"
+      ctx.beginPath()
+      ctx.arc(7, -5, 2, 0, Math.PI * 2)
+      ctx.fill()
 
-    // Bird beak
-    ctx.fillStyle = "#FF6B35"
-    ctx.beginPath()
-    ctx.moveTo(this.size / 2, 0)
-    ctx.lineTo(this.size / 2 + 8, -3)
-    ctx.lineTo(this.size / 2 + 8, 3)
-    ctx.closePath()
-    ctx.fill()
+      // Bird beak
+      ctx.fillStyle = "#FF6B35"
+      ctx.beginPath()
+      ctx.moveTo(this.size / 2, 0)
+      ctx.lineTo(this.size / 2 + 8, -3)
+      ctx.lineTo(this.size / 2 + 8, 3)
+      ctx.closePath()
+      ctx.fill()
+    }
 
     ctx.restore()
   }
@@ -121,12 +135,12 @@ class Pipe {
   scored: boolean
   gapY: number
 
-  constructor(x: number, canvasHeight: number, speed: number) {
+  constructor(x: number, canvasHeight: number, speed: number, baseGap = 120) {
     this.x = x
     this.width = 60
     this.speed = speed
     this.scored = false
-    this.gap = 120 + Math.random() * 40 // Random gap size between 120-160
+    this.gap = baseGap + Math.random() * 40 // Random gap size variation
 
     // Random gap position (not too high or low)
     const minGapY = 100
@@ -139,35 +153,53 @@ class Pipe {
     this.x -= this.speed
   }
 
-  render(ctx: CanvasRenderingContext2D, canvasHeight: number) {
-    // Pipe color with gradient
-    const gradient = ctx.createLinearGradient(this.x, 0, this.x + this.width, 0)
-    gradient.addColorStop(0, "#4CAF50")
-    gradient.addColorStop(0.5, "#66BB6A")
-    gradient.addColorStop(1, "#4CAF50")
-    ctx.fillStyle = gradient
+  render(ctx: CanvasRenderingContext2D, canvasHeight: number, customImage?: HTMLImageElement) {
+    if (customImage) {
+      // Draw custom pipe image
+      const pipeWidth = this.width
+      const topHeight = this.topHeight
+      const bottomHeight = canvasHeight - (this.gapY + this.gap)
+      
+      // Top pipe
+      ctx.save()
+      ctx.scale(1, -1) // Flip vertically for top pipe
+      ctx.drawImage(customImage, this.x, -topHeight, pipeWidth, topHeight)
+      ctx.restore()
+      
+      // Bottom pipe
+      const bottomY = this.gapY + this.gap
+      ctx.drawImage(customImage, this.x, bottomY, pipeWidth, bottomHeight)
+    } else {
+      // Default pipe rendering
+      // Pipe color with gradient
+      const gradient = ctx.createLinearGradient(this.x, 0, this.x + this.width, 0)
+      gradient.addColorStop(0, "#4CAF50")
+      gradient.addColorStop(0.5, "#66BB6A")
+      gradient.addColorStop(1, "#4CAF50")
+      ctx.fillStyle = gradient
 
-    // Top pipe
-    ctx.fillRect(this.x, 0, this.width, this.topHeight)
+      // Top pipe
+      ctx.fillRect(this.x, 0, this.width, this.topHeight)
 
-    // Bottom pipe
-    const bottomPipeY = this.gapY + this.gap
-    const bottomPipeHeight = canvasHeight - bottomPipeY
-    ctx.fillRect(this.x, bottomPipeY, this.width, bottomPipeHeight)
+      // Bottom pipe
+      const bottomPipeY = this.gapY + this.gap
+      const bottomPipeHeight = canvasHeight - bottomPipeY
+      ctx.fillRect(this.x, bottomPipeY, this.width, bottomPipeHeight)
 
-    // Pipe caps (decorative)
-    ctx.fillStyle = "#45a049"
+      // Pipe caps (decorative)
+      ctx.fillStyle = "#45a049"
 
-    // Top pipe cap
-    ctx.fillRect(this.x - 5, this.topHeight - 20, this.width + 10, 20)
+      // Top pipe cap
+      ctx.fillRect(this.x - 5, this.topHeight - 20, this.width + 10, 20)
 
-    // Bottom pipe cap
-    ctx.fillRect(this.x - 5, bottomPipeY, this.width + 10, 20)
+      // Bottom pipe cap
+      ctx.fillRect(this.x - 5, bottomPipeY, this.width + 10, 20)
 
-    // Pipe highlights
-    ctx.fillStyle = "#81C784"
-    ctx.fillRect(this.x + 5, 0, 8, this.topHeight - 20)
-    ctx.fillRect(this.x + 5, bottomPipeY + 20, 8, bottomPipeHeight - 20)
+      // Pipe highlights
+      ctx.fillStyle = "#81C784"
+      ctx.fillRect(this.x + 5, 0, 8, this.topHeight - 20)
+      ctx.fillRect(this.x + 5, bottomPipeY + 20, 8, bottomPipeHeight - 20)
+    }
   }
 
   getBounds(canvasHeight: number) {
@@ -253,6 +285,66 @@ export default function FlappyBird({ onBack, onScore }: FlappyBirdProps) {
   const [score, setScore] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [customAssets, setCustomAssets] = useState<Record<string, string>>({})
+  
+  // Game parameters state
+  const [gameParams, setGameParams] = useState({
+    gravity: 0.6,
+    jumpPower: 12,
+    pipeGap: 120,
+    gameSpeed: 3
+  })
+
+  // Image cache for custom assets
+  const [imageCache, setImageCache] = useState<Record<string, HTMLImageElement>>({})
+
+  // Load custom images when assets change
+  useEffect(() => {
+    const loadImages = async () => {
+      const newImageCache: Record<string, HTMLImageElement> = {}
+      
+      for (const [assetId, assetUrl] of Object.entries(customAssets)) {
+        if (assetUrl) {
+          try {
+            const img = new Image()
+            img.crossOrigin = 'anonymous' // Handle CORS for data URLs
+            await new Promise((resolve, reject) => {
+              img.onload = resolve
+              img.onerror = reject
+              img.src = assetUrl
+            })
+            newImageCache[assetId] = img
+            console.log(`Loaded image for ${assetId}:`, img.width, 'x', img.height)
+          } catch (error) {
+            console.error(`Failed to load image for ${assetId}:`, error)
+          }
+        }
+      }
+      
+      setImageCache(newImageCache)
+    }
+
+    if (Object.keys(customAssets).length > 0) {
+      loadImages()
+    }
+  }, [customAssets])
+
+  // Update bird parameters when gameParams change
+  useEffect(() => {
+    const game = gameStateRef.current
+    game.bird.updateParams(gameParams.gravity, gameParams.jumpPower)
+    game.gameSpeed = gameParams.gameSpeed
+  }, [gameParams])
+
+  // Handle parameter changes from reskin panel
+  const handleParamsChanged = useCallback((params: Record<string, number | string>) => {
+    const newParams = {
+      gravity: typeof params.gravity === 'number' ? params.gravity : gameParams.gravity,
+      jumpPower: typeof params.jumpPower === 'number' ? params.jumpPower : gameParams.jumpPower,
+      pipeGap: typeof params.pipeGap === 'number' ? params.pipeGap : gameParams.pipeGap,
+      gameSpeed: typeof params.gameSpeed === 'number' ? params.gameSpeed : gameParams.gameSpeed
+    }
+    setGameParams(newParams)
+  }, [gameParams])
 
   const checkCollision = (rect1: CollisionRect, rect2: CollisionRect) => {
     return (
@@ -291,7 +383,7 @@ export default function FlappyBird({ onBack, onScore }: FlappyBirdProps) {
     // Spawn new pipes
     game.pipeSpawnTimer += 16 // Assuming 60fps
     if (game.pipeSpawnTimer >= game.pipeSpawnInterval) {
-      game.pipes.push(new Pipe(canvas.width, canvas.height, game.gameSpeed))
+      game.pipes.push(new Pipe(canvas.width, canvas.height, game.gameSpeed, gameParams.pipeGap))
       game.pipeSpawnTimer = 0
     }
 
@@ -360,37 +452,55 @@ export default function FlappyBird({ onBack, onScore }: FlappyBirdProps) {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     // Background with parallax effect
-    const backgroundGradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
-    backgroundGradient.addColorStop(0, "#87CEEB")
-    backgroundGradient.addColorStop(0.7, "#98FB98")
-    backgroundGradient.addColorStop(1, "#90EE90")
-    ctx.fillStyle = backgroundGradient
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    if (imageCache['background']) {
+      // Draw custom background image
+      ctx.drawImage(imageCache['background'], 0, 0, canvas.width, canvas.height)
+    } else {
+      // Default background
+      const backgroundGradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
+      backgroundGradient.addColorStop(0, "#87CEEB")
+      backgroundGradient.addColorStop(0.7, "#98FB98")
+      backgroundGradient.addColorStop(1, "#90EE90")
+      ctx.fillStyle = backgroundGradient
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+    }
 
-    // Draw moving clouds
-    ctx.fillStyle = "rgba(255, 255, 255, 0.8)"
-    for (let i = 0; i < 5; i++) {
-      const x = ((i * 200 + Date.now() * 0.02) % (canvas.width + 100)) - 50
-      const y = 50 + i * 30
-      ctx.beginPath()
-      ctx.arc(x, y, 20, 0, Math.PI * 2)
-      ctx.arc(x + 20, y, 25, 0, Math.PI * 2)
-      ctx.arc(x + 40, y, 20, 0, Math.PI * 2)
-      ctx.fill()
+    // Draw moving clouds (only if no custom background)
+    if (!imageCache['background']) {
+      ctx.fillStyle = "rgba(255, 255, 255, 0.8)"
+      for (let i = 0; i < 5; i++) {
+        const x = ((i * 200 + Date.now() * 0.02) % (canvas.width + 100)) - 50
+        const y = 50 + i * 30
+        ctx.beginPath()
+        ctx.arc(x, y, 20, 0, Math.PI * 2)
+        ctx.arc(x + 20, y, 25, 0, Math.PI * 2)
+        ctx.arc(x + 40, y, 20, 0, Math.PI * 2)
+        ctx.fill()
+      }
     }
 
     // Draw ground
-    ctx.fillStyle = "#8B4513"
-    ctx.fillRect(0, canvas.height - 20, canvas.width, 20)
+    if (imageCache['ground']) {
+      // Draw custom ground image
+      const pattern = ctx.createPattern(imageCache['ground'], 'repeat-x')
+      if (pattern) {
+        ctx.fillStyle = pattern
+        ctx.fillRect(0, canvas.height - 50, canvas.width, 50)
+      }
+    } else {
+      // Default ground
+      ctx.fillStyle = "#8B4513"
+      ctx.fillRect(0, canvas.height - 20, canvas.width, 20)
+    }
 
     // Draw pipes
-    game.pipes.forEach((pipe) => pipe.render(ctx, canvas.height))
+    game.pipes.forEach((pipe) => pipe.render(ctx, canvas.height, imageCache['pipe']))
 
     // Draw particles
     game.particles.forEach((particle) => particle.render(ctx))
 
     // Draw bird
-    game.bird.render(ctx)
+    game.bird.render(ctx, imageCache['bird'])
 
     // Draw UI
     ctx.fillStyle = "white"
@@ -427,7 +537,7 @@ export default function FlappyBird({ onBack, onScore }: FlappyBirdProps) {
     }
 
     ctx.textAlign = "left"
-  }, [isPaused, onScore])
+  }, [isPaused, onScore, gameParams, imageCache])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -456,6 +566,12 @@ export default function FlappyBird({ onBack, onScore }: FlappyBirdProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't prevent default if user is typing in an input field
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
+        return
+      }
+      
       if (e.code === "Space" || e.code === "ArrowUp") {
         e.preventDefault()
         if (gameStateRef.current.gameState === "playing") {
@@ -499,13 +615,13 @@ export default function FlappyBird({ onBack, onScore }: FlappyBirdProps) {
       game.bestScore = game.score
     }
 
-    game.bird = new Bird(100, 300)
+    game.bird = new Bird(100, 300, gameParams.gravity, gameParams.jumpPower)
     game.pipes = []
     game.particles = []
     game.score = 0
     game.gameState = "playing"
     game.pipeSpawnTimer = 0
-    game.gameSpeed = 3
+    game.gameSpeed = gameParams.gameSpeed
     game.lastSpeedIncrease = 0
     game.achievedMilestones = []
     setGameState("playing")
@@ -516,9 +632,6 @@ export default function FlappyBird({ onBack, onScore }: FlappyBirdProps) {
   const togglePause = () => {
     setIsPaused(!isPaused)
   }
-
-  // TODO: implement live asset rendering using customAssets in game rendering
-  console.log('Custom assets available:', customAssets)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-900 to-pink-900 p-2 sm:p-4 lg:p-6">
@@ -626,20 +739,42 @@ export default function FlappyBird({ onBack, onScore }: FlappyBirdProps) {
           gameId="flappy-bird"
           gameName="Flappy Bird"
           assetSlots={[
-            { id: "background", name: "Background", defaultPrompt: "Sky background scene", dimensions: { width: 800, height: 450 } },
-            { id: "bird", name: "Bird", defaultPrompt: "Flying bird character", dimensions: { width: 30, height: 30 } },
-            { id: "pipe", name: "Pipe", defaultPrompt: "Obstacle pipes", dimensions: { width: 60, height: 400 } },
-            { id: "ground", name: "Ground", defaultPrompt: "Ground/floor texture", dimensions: { width: 800, height: 20 } },
-          ]}
+  {
+    id: "background",
+    name: "Background",
+    defaultPrompt: "anime-style side-scrolling game background with bright blue sky, fluffy clouds, distant mountains, warm lighting, soft pastel tones",
+    dimensions: { width: 800, height: 450 },
+  },
+  {
+    id: "bird",
+    name: "Bird",
+    defaultPrompt: "adorable anime-style bird character in side view, expressive eyes, detailed feathers, cel-shaded, flying with a determined look",
+    dimensions: { width: 30, height: 30 },
+  },
+  {
+    id: "pipe",
+    name: "Pipe",
+    defaultPrompt: "anime-style cylindrical green pipe obstacle with soft shadows and cel shading, matches colorful side-scrolling anime game background",
+    dimensions: { width: 60, height: 200 },
+  },
+  {
+    id: "ground",
+    name: "Ground",
+    defaultPrompt: "anime-style ground platform with grassy top and dirt layers, detailed textures, soft outlines, pastel color palette",
+    dimensions: { width: 800, height: 20 },
+  },
+]}
+
           gameParams={[
-            { id: "gravity", name: "Gravity", type: "slider", min: 0.2, max: 1.5, step: 0.1, defaultValue: 0.6, value: 0.6 },
-            { id: "jumpPower", name: "Jump Power", type: "slider", min: 8, max: 20, step: 1, defaultValue: 12, value: 12 },
-            { id: "pipeSpeed", name: "Pipe Speed", type: "slider", min: 1, max: 8, step: 0.5, defaultValue: 3, value: 3 },
-            { id: "pipeGap", name: "Pipe Gap", type: "slider", min: 80, max: 200, step: 10, defaultValue: 120, value: 120 },
+            { id: "gravity", name: "Gravity", type: "slider", min: 0.1, max: 1.5, step: 0.1, defaultValue: 0.6, value: gameParams.gravity },
+            { id: "jumpPower", name: "Jump Power", type: "slider", min: 5, max: 20, step: 1, defaultValue: 12, value: gameParams.jumpPower },
+            { id: "pipeGap", name: "Pipe Gap", type: "slider", min: 80, max: 200, step: 10, defaultValue: 120, value: gameParams.pipeGap },
+            { id: "gameSpeed", name: "Game Speed", type: "slider", min: 1, max: 8, step: 0.5, defaultValue: 3, value: gameParams.gameSpeed },
           ]}
           isOpen={true}
           onClose={() => {}}
           onAssetsChanged={(assets) => setCustomAssets(assets)}
+          onParamsChanged={handleParamsChanged}
           mode="inline"
           theme="flappy-bird"
         />

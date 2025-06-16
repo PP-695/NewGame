@@ -285,6 +285,32 @@ export default function SpeedRunner({ onBack, onScore }: SpeedRunnerProps) {
   const [isPaused, setIsPaused] = useState(false)
   const [customAssets, setCustomAssets] = useState<Record<string, string>>({})
 
+  // Game parameters state
+  const [gameParams, setGameParams] = useState({
+    gameSpeed: 4,
+    jumpHeight: 18,
+    obstacleSpacing: 250,
+    powerUpChance: 15
+  })
+
+  // Update game parameters when they change
+  useEffect(() => {
+    const game = gameStateRef.current
+    game.player.baseSpeed = gameParams.gameSpeed
+    game.player.currentSpeed = gameParams.gameSpeed
+    // Jump height and obstacle spacing will be used in game logic
+  }, [gameParams])
+
+  // Handle parameter changes from the reskin panel
+  const handleParamsChanged = useCallback((params: Record<string, number | string>) => {
+    setGameParams({
+      gameSpeed: Number(params.gameSpeed) || 4,
+      jumpHeight: Number(params.jumpHeight) || 18,
+      obstacleSpacing: Number(params.obstacleSpacing) || 250,
+      powerUpChance: Number(params.powerUpChance) || 15
+    })
+  }, [])
+
   // TODO: implement asset rendering
   void customAssets
 
@@ -502,6 +528,12 @@ export default function SpeedRunner({ onBack, onScore }: SpeedRunnerProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't prevent default if user is typing in an input field
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
+        return
+      }
+      
       if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") {
         e.preventDefault()
         gameStateRef.current.isJumpPressed = true
@@ -737,14 +769,15 @@ export default function SpeedRunner({ onBack, onScore }: SpeedRunnerProps) {
             { id: "powerup", name: "Power-up", defaultPrompt: "glowing power-up item for speed runner game", dimensions: { width: 30, height: 30 } },
           ]}
           gameParams={[
-            { id: "gameSpeed", name: "Game Speed", type: "slider", min: 2, max: 8, step: 0.5, defaultValue: 4, value: 4 },
-            { id: "jumpHeight", name: "Jump Height", type: "slider", min: 10, max: 25, step: 1, defaultValue: 18, value: 18 },
-            { id: "obstacleSpacing", name: "Obstacle Spacing", type: "slider", min: 100, max: 400, step: 25, defaultValue: 250, value: 250 },
-            { id: "powerUpChance", name: "Power-up Chance (%)", type: "slider", min: 5, max: 30, step: 5, defaultValue: 15, value: 15 },
+            { id: "gameSpeed", name: "Game Speed", type: "slider", min: 2, max: 8, step: 0.5, defaultValue: 4, value: gameParams.gameSpeed },
+            { id: "jumpHeight", name: "Jump Height", type: "slider", min: 10, max: 25, step: 1, defaultValue: 18, value: gameParams.jumpHeight },
+            { id: "obstacleSpacing", name: "Obstacle Spacing", type: "slider", min: 100, max: 400, step: 25, defaultValue: 250, value: gameParams.obstacleSpacing },
+            { id: "powerUpChance", name: "Power-up Chance (%)", type: "slider", min: 5, max: 30, step: 5, defaultValue: 15, value: gameParams.powerUpChance },
           ]}
           isOpen={true}
           onClose={() => {}}
           onAssetsChanged={(assets) => setCustomAssets(assets)}
+          onParamsChanged={handleParamsChanged}
           mode="inline"
           theme="speed-runner"
         />

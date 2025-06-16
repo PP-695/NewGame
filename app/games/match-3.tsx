@@ -84,7 +84,7 @@ class Gem {
     this.animationProgress = 0
   }
 
-  render(ctx: CanvasRenderingContext2D) {
+  render(ctx: CanvasRenderingContext2D, customImages?: Record<string, HTMLImageElement>) {
     const colors = {
       red: "#FF4444",
       blue: "#4444FF",
@@ -94,6 +94,20 @@ class Gem {
       orange: "#FF8844",
       bomb: "#2F2F2F",
       lineClear: "#FFFFFF",
+    }
+
+    // Check if custom image exists for this gem type
+    const customImage = customImages?.[this.type] || customImages?.[`${this.type}_gem`]
+    
+    if (customImage) {
+      // Draw custom gem image
+      const scale = (this.size - 4) / Math.max(customImage.width, customImage.height)
+      const width = customImage.width * scale
+      const height = customImage.height * scale
+      const offsetX = (this.size - width) / 2
+      const offsetY = (this.size - height) / 2
+      ctx.drawImage(customImage, this.x + offsetX, this.y + offsetY, width, height)
+      return
     }
 
     ctx.fillStyle = colors[this.type]
@@ -313,8 +327,85 @@ export default function Match3Game({ onBack, onScore }: Match3Props) {
   const [isPaused, setIsPaused] = useState(false)
   const [customAssets, setCustomAssets] = useState<Record<string, string>>({})
 
-  // TODO: implement asset rendering
-  void customAssets
+  // Game parameters state
+  const [gameParams, setGameParams] = useState({
+    gridSize: 8,
+    movesPerLevel: 30,
+    specialGemChance: 10,
+    targetScore: 1000
+  })
+
+  // Image cache for custom assets
+  const [imageCache, setImageCache] = useState<Record<string, HTMLImageElement>>({})
+
+  // Load custom images when assets change
+  useEffect(() => {
+    const loadImages = async () => {
+      const newImageCache: Record<string, HTMLImageElement> = {}
+      
+      for (const [assetId, assetUrl] of Object.entries(customAssets)) {
+        if (assetUrl) {
+          try {
+            const img = new Image()
+            img.crossOrigin = 'anonymous' // Handle CORS for data URLs
+            await new Promise((resolve, reject) => {
+              img.onload = resolve
+              img.onerror = reject
+              img.src = assetUrl
+            })
+            newImageCache[assetId] = img
+            console.log(`Loaded image for ${assetId}:`, img.width, 'x', img.height)
+          } catch (error) {
+            console.error(`Failed to load image for ${assetId}:`, error)
+          }
+        }
+      }
+      
+      setImageCache(newImageCache)
+    }
+
+    if (Object.keys(customAssets).length > 0) {
+      loadImages()
+    }
+  }, [customAssets])
+
+  // Update game parameters when they change
+  useEffect(() => {
+    const game = gameStateRef.current
+    game.gridWidth = gameParams.gridSize
+    game.gridHeight = gameParams.gridSize
+    game.moves = gameParams.movesPerLevel
+    game.targetScore = gameParams.targetScore
+    game.specialGemChance = gameParams.specialGemChance / 100 // Convert percentage to decimal
+    
+    // Update current state if game is not playing
+    if (game.gameState === "menu") {
+      setMoves(gameParams.movesPerLevel)
+      setTargetScore(gameParams.targetScore)
+    }
+  }, [gameParams])
+
+  // Handle parameter changes from the reskin panel
+  const handleParamsChanged = useCallback((params: Record<string, number | string>) => {
+    // Update game parameters
+    setGameParams({
+      gridSize: Number(params.gridSize) || 8,
+      movesPerLevel: Number(params.movesPerLevel) || 30,
+      specialGemChance: Number(params.specialGemChance) || 10,
+      targetScore: Number(params.targetScore) || 1000
+    })
+    
+    // Update custom assets
+    const assets: Record<string, string> = {}
+    Object.entries(params).forEach(([key, value]) => {
+      if (typeof value === 'string' && value.startsWith('data:image/')) {
+        assets[key] = value
+      }
+    })
+    if (Object.keys(assets).length > 0) {
+      setCustomAssets(prev => ({ ...prev, ...assets }))
+    }
+  }, [])
 
   // Reskin panel configuration
   const assetSlots = [
@@ -344,7 +435,7 @@ export default function Match3Game({ onBack, onScore }: Match3Props) {
     }
   ]
 
-  const gameParams = [
+  const gameParamsConfig = [
     {
       id: "gridSize",
       name: "Grid Size",
@@ -353,7 +444,7 @@ export default function Match3Game({ onBack, onScore }: Match3Props) {
       max: 10,
       step: 1,
       defaultValue: 8,
-      value: 8
+      value: gameParams.gridSize
     },
     {
       id: "movesPerLevel",
@@ -363,7 +454,7 @@ export default function Match3Game({ onBack, onScore }: Match3Props) {
       max: 50,
       step: 5,
       defaultValue: 30,
-      value: 30
+      value: gameParams.movesPerLevel
     },
     {
       id: "specialGemChance",
@@ -373,7 +464,7 @@ export default function Match3Game({ onBack, onScore }: Match3Props) {
       max: 30,
       step: 5,
       defaultValue: 10,
-      value: 10
+      value: gameParams.specialGemChance
     },
     {
       id: "targetScore",
@@ -383,7 +474,7 @@ export default function Match3Game({ onBack, onScore }: Match3Props) {
       max: 2000,
       step: 250,
       defaultValue: 1000,
-      value: 1000
+      value: gameParams.targetScore
     }
   ]
 
@@ -855,11 +946,17 @@ export default function Match3Game({ onBack, onScore }: Match3Props) {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       // Background
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
-      gradient.addColorStop(0, "#2C1810")
-      gradient.addColorStop(1, "#1A0F08")
-      ctx.fillStyle = gradient
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      if (imageCache['background']) {
+        // Draw custom background image
+        ctx.drawImage(imageCache['background'], 0, 0, canvas.width, canvas.height)
+      } else {
+        // Default background
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
+        gradient.addColorStop(0, "#2C1810")
+        gradient.addColorStop(1, "#1A0F08")
+        ctx.fillStyle = gradient
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+      }
 
       // Draw grid
       ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"
@@ -881,7 +978,7 @@ export default function Match3Game({ onBack, onScore }: Match3Props) {
       for (let y = 0; y < game.gridHeight; y++) {
         for (let x = 0; x < game.gridWidth; x++) {
           if (game.grid[y][x]) {
-            game.grid[y][x]!.render(ctx)
+            game.grid[y][x]!.render(ctx, imageCache)
           }
         }
       }
@@ -950,7 +1047,7 @@ export default function Match3Game({ onBack, onScore }: Match3Props) {
         }
       }
     },
-    [isPaused, isDragging, dragStart, dragEnd],
+    [isPaused, isDragging, dragStart, dragEnd, imageCache],
   )
 
   useEffect(() => {
@@ -1241,10 +1338,11 @@ export default function Match3Game({ onBack, onScore }: Match3Props) {
           gameId="match-3"
           gameName="Match-3 Puzzle"
           assetSlots={assetSlots}
-          gameParams={gameParams}
+          gameParams={gameParamsConfig}
           isOpen={true}
           onClose={() => {}}
           onAssetsChanged={(assets) => setCustomAssets(assets)}
+          onParamsChanged={handleParamsChanged}
           mode="inline"
           theme="match-3"
         />

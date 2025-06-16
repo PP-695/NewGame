@@ -110,8 +110,7 @@ class Player {
     this.isInvincible = true
     this.invincibilityTimer = duration
   }
-
-  render(ctx: CanvasRenderingContext2D) {
+  render(ctx: CanvasRenderingContext2D, customImage?: HTMLImageElement) {
     ctx.save()
 
     // Invincibility effect
@@ -119,38 +118,47 @@ class Player {
       ctx.globalAlpha = 0.5
     }
 
-    // Player body (frog)
-    ctx.fillStyle = "#4CAF50"
-    ctx.beginPath()
-    ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2)
-    ctx.fill()
+    if (customImage) {
+      // Draw custom player image
+      const scale = this.size / Math.max(customImage.width, customImage.height)
+      const width = customImage.width * scale
+      const height = customImage.height * scale
+      ctx.drawImage(customImage, this.x - width/2, this.y - height/2, width, height)
+    } else {
+      // Default player rendering (frog)
+      // Player body (frog)
+      ctx.fillStyle = "#4CAF50"
+      ctx.beginPath()
+      ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2)
+      ctx.fill()
 
-    // Frog spots
-    ctx.fillStyle = "#2E7D32"
-    ctx.beginPath()
-    ctx.arc(this.x - 8, this.y - 5, 3, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.beginPath()
-    ctx.arc(this.x + 8, this.y - 5, 3, 0, Math.PI * 2)
-    ctx.fill()
+      // Frog spots
+      ctx.fillStyle = "#2E7D32"
+      ctx.beginPath()
+      ctx.arc(this.x - 8, this.y - 5, 3, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(this.x + 8, this.y - 5, 3, 0, Math.PI * 2)
+      ctx.fill()
 
-    // Eyes
-    ctx.fillStyle = "#FFEB3B"
-    ctx.beginPath()
-    ctx.arc(this.x - 6, this.y - 8, 4, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.beginPath()
-    ctx.arc(this.x + 6, this.y - 8, 4, 0, Math.PI * 2)
-    ctx.fill()
+      // Eyes
+      ctx.fillStyle = "#FFEB3B"
+      ctx.beginPath()
+      ctx.arc(this.x - 6, this.y - 8, 4, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(this.x + 6, this.y - 8, 4, 0, Math.PI * 2)
+      ctx.fill()
 
-    // Eye pupils
-    ctx.fillStyle = "black"
-    ctx.beginPath()
-    ctx.arc(this.x - 6, this.y - 8, 2, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.beginPath()
-    ctx.arc(this.x + 6, this.y - 8, 2, 0, Math.PI * 2)
-    ctx.fill()
+      // Eye pupils
+      ctx.fillStyle = "black"
+      ctx.beginPath()
+      ctx.arc(this.x - 6, this.y - 8, 2, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(this.x + 6, this.y - 8, 2, 0, Math.PI * 2)
+      ctx.fill()
+    }
 
     ctx.restore()
   }
@@ -206,34 +214,42 @@ class Vehicle {
   update() {
     this.x += this.speed * this.direction
   }
+  render(ctx: CanvasRenderingContext2D, customImage?: HTMLImageElement) {
+    if (customImage) {
+      // Draw custom vehicle image
+      const scale = Math.min(this.width / customImage.width, this.height / customImage.height)
+      const width = customImage.width * scale
+      const height = customImage.height * scale
+      ctx.drawImage(customImage, this.x - width/2, this.y - height/2, width, height)
+    } else {
+      // Default vehicle rendering
+      // Vehicle body
+      ctx.fillStyle = this.color
+      ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height)
 
-  render(ctx: CanvasRenderingContext2D) {
-    // Vehicle body
-    ctx.fillStyle = this.color
-    ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height)
+      // Vehicle details
+      ctx.fillStyle = "rgba(0, 0, 0, 0.3)"
+      ctx.fillRect(this.x - this.width / 2 + 5, this.y - this.height / 2 + 5, this.width - 10, 8)
 
-    // Vehicle details
-    ctx.fillStyle = "rgba(0, 0, 0, 0.3)"
-    ctx.fillRect(this.x - this.width / 2 + 5, this.y - this.height / 2 + 5, this.width - 10, 8)
+      // Wheels
+      ctx.fillStyle = "black"
+      const wheelY = this.y + this.height / 2
+      ctx.beginPath()
+      ctx.arc(this.x - this.width / 3, wheelY, 5, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(this.x + this.width / 3, wheelY, 5, 0, Math.PI * 2)
+      ctx.fill()
 
-    // Wheels
-    ctx.fillStyle = "black"
-    const wheelY = this.y + this.height / 2
-    ctx.beginPath()
-    ctx.arc(this.x - this.width / 3, wheelY, 5, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.beginPath()
-    ctx.arc(this.x + this.width / 3, wheelY, 5, 0, Math.PI * 2)
-    ctx.fill()
-
-    // Type-specific details
-    if (this.type === "truck") {
-      ctx.fillStyle = "#666666"
-      ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2 - 10, this.width, 10)
-    } else if (this.type === "bus") {
-      ctx.fillStyle = "rgba(255, 255, 255, 0.7)"
-      for (let i = 0; i < 4; i++) {
-        ctx.fillRect(this.x - this.width / 2 + 10 + i * 20, this.y - this.height / 2 + 8, 15, 12)
+      // Type-specific details
+      if (this.type === "truck") {
+        ctx.fillStyle = "#666666"
+        ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2 - 10, this.width, 10)
+      } else if (this.type === "bus") {
+        ctx.fillStyle = "rgba(255, 255, 255, 0.7)"
+        for (let i = 0; i < 4; i++) {
+          ctx.fillRect(this.x - this.width / 2 + 10 + i * 20, this.y - this.height / 2 + 8, 15, 12)
+        }
       }
     }
   }
@@ -268,30 +284,38 @@ class Log {
   update() {
     this.x += this.speed * this.direction
   }
+  render(ctx: CanvasRenderingContext2D, customImage?: HTMLImageElement) {
+    if (customImage) {
+      // Draw custom log image
+      const scale = Math.min(this.width / customImage.width, this.height / customImage.height)
+      const width = customImage.width * scale
+      const height = customImage.height * scale
+      ctx.drawImage(customImage, this.x - width/2, this.y - height/2, width, height)
+    } else {
+      // Default log rendering
+      // Log body
+      ctx.fillStyle = "#8B4513"
+      ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height)
 
-  render(ctx: CanvasRenderingContext2D) {
-    // Log body
-    ctx.fillStyle = "#8B4513"
-    ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height)
+      // Log texture
+      ctx.strokeStyle = "#654321"
+      ctx.lineWidth = 2
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath()
+        ctx.moveTo(this.x - this.width / 2, this.y - this.height / 2 + i * 12)
+        ctx.lineTo(this.x + this.width / 2, this.y - this.height / 2 + i * 12)
+        ctx.stroke()
+      }
 
-    // Log texture
-    ctx.strokeStyle = "#654321"
-    ctx.lineWidth = 2
-    for (let i = 0; i < 3; i++) {
+      // Log ends
+      ctx.fillStyle = "#A0522D"
       ctx.beginPath()
-      ctx.moveTo(this.x - this.width / 2, this.y - this.height / 2 + i * 12)
-      ctx.lineTo(this.x + this.width / 2, this.y - this.height / 2 + i * 12)
-      ctx.stroke()
+      ctx.arc(this.x - this.width / 2, this.y, this.height / 2, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(this.x + this.width / 2, this.y, this.height / 2, 0, Math.PI * 2)
+      ctx.fill()
     }
-
-    // Log ends
-    ctx.fillStyle = "#A0522D"
-    ctx.beginPath()
-    ctx.arc(this.x - this.width / 2, this.y, this.height / 2, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.beginPath()
-    ctx.arc(this.x + this.width / 2, this.y, this.height / 2, 0, Math.PI * 2)
-    ctx.fill()
   }
 
   getBounds() {
@@ -424,7 +448,7 @@ class Lane {
     }
   }
 
-  render(ctx: CanvasRenderingContext2D, canvasWidth: number) {
+  render(ctx: CanvasRenderingContext2D, canvasWidth: number, customImages?: Record<string, HTMLImageElement>) {
     // Lane background
     if (this.type === "safe") {
       ctx.fillStyle = "#90EE90"
@@ -454,17 +478,16 @@ class Lane {
         const waveOffset = Math.sin(Date.now() * 0.003 + i * 0.01) * 3
         ctx.fillRect(i, this.y - 20 + waveOffset, 20, 2)
       }
-    }
-
-    // Render objects
-    this.vehicles.forEach((vehicle) => vehicle.render(ctx))
-    this.logs.forEach((log) => log.render(ctx))
+    }    // Render objects with custom images
+    this.vehicles.forEach((vehicle) => vehicle.render(ctx, customImages?.['car']))
+    this.logs.forEach((log) => log.render(ctx, customImages?.['log']))
     this.powerUps.forEach((powerUp) => powerUp.render(ctx))
   }
 }
 
 export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  
   const gameStateRef = useRef({
     player: new Player(400, 550, 40),
     lanes: [] as Lane[],
@@ -479,14 +502,68 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
     consecutiveLanes: 0,
     bestScore: 0,
   })
-
+  
   const [gameState, setGameState] = useState<"menu" | "playing" | "gameOver">("menu")
   const [score, setScore] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [customAssets, setCustomAssets] = useState<Record<string, string>>({})
 
-  // TODO: implement live asset rendering using customAssets in game rendering
-  console.log('Custom assets available:', customAssets)
+  // Image cache for custom assets
+  const [imageCache, setImageCache] = useState<Record<string, HTMLImageElement>>({})
+
+  // Load custom images when assets change
+  useEffect(() => {
+    const loadImages = async () => {
+      const newImageCache: Record<string, HTMLImageElement> = {}
+      
+      for (const [assetId, assetUrl] of Object.entries(customAssets)) {
+        if (assetUrl) {
+          try {
+            const img = new Image()
+            img.crossOrigin = 'anonymous' // Handle CORS for data URLs
+            await new Promise((resolve, reject) => {
+              img.onload = resolve
+              img.onerror = reject
+              img.src = assetUrl
+            })
+            newImageCache[assetId] = img
+            console.log(`Loaded image for ${assetId}:`, img.width, 'x', img.height)
+          } catch (error) {
+            console.error(`Failed to load image for ${assetId}:`, error)
+          }
+        }
+      }
+        setImageCache(newImageCache)
+    }
+
+    if (Object.keys(customAssets).length > 0) {
+      loadImages()
+    }
+  }, [customAssets])
+
+  // Game parameters state
+  const [gameParams, setGameParams] = useState({
+    playerSpeed: 0.2,
+    carSpeed: 3,
+    logSpeed: 1.5,
+    difficulty: 1
+  })
+  // Update game parameters when they change
+  useEffect(() => {
+    const game = gameStateRef.current
+    game.player.moveSpeed = gameParams.playerSpeed
+    game.difficulty = gameParams.difficulty
+    // Note: Car and log speeds will be applied to newly created lanes
+  }, [gameParams])
+  // Handle parameter changes from the reskin panel
+  const handleParamsChanged = useCallback((params: Record<string, number | string>) => {
+    setGameParams({
+      playerSpeed: Number(params.playerSpeed) || 0.2,
+      carSpeed: Number(params.carSpeed) || 3,
+      logSpeed: Number(params.logSpeed) || 1.5,
+      difficulty: Number(params.difficulty) || 1
+    })
+  }, [])
 
   const checkCollision = (rect1: CollisionRect | null, rect2: CollisionRect | null) => {
     if (!rect1 || !rect2) return false
@@ -672,9 +749,7 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
         }
         onScore(game.score + game.bonusPoints)
         return
-      }
-
-      // Render
+      }      // Render
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       // Save context for camera
@@ -682,17 +757,23 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
       ctx.translate(0, -game.camera.y)
 
       // Draw background
-      const gradient = ctx.createLinearGradient(0, game.camera.y, 0, game.camera.y + canvas.height)
-      gradient.addColorStop(0, "#87CEEB")
-      gradient.addColorStop(1, "#98FB98")
-      ctx.fillStyle = gradient
-      ctx.fillRect(0, game.camera.y, canvas.width, canvas.height)
+      if (imageCache['background']) {
+        // Draw custom background image
+        ctx.drawImage(imageCache['background'], 0, game.camera.y, canvas.width, canvas.height)
+      } else {
+        // Default background
+        const gradient = ctx.createLinearGradient(0, game.camera.y, 0, game.camera.y + canvas.height)
+        gradient.addColorStop(0, "#87CEEB")
+        gradient.addColorStop(1, "#98FB98")
+        ctx.fillStyle = gradient
+        ctx.fillRect(0, game.camera.y, canvas.width, canvas.height)
+      }
 
-      // Draw lanes
-      game.lanes.forEach((lane) => lane.render(ctx, canvas.width))
+      // Draw lanes with custom images
+      game.lanes.forEach((lane) => lane.render(ctx, canvas.width, imageCache))
 
-      // Draw player
-      game.player.render(ctx)
+      // Draw player with custom image
+      game.player.render(ctx, imageCache['player'])
 
       // Restore context
       ctx.restore()
@@ -720,7 +801,7 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
         ctx.fillText(`Bonus: ${game.bonusPoints}`, canvas.width - 150, 70)
       }
     },
-    [isPaused, onScore],
+    [isPaused, onScore, imageCache],
   )
 
   useEffect(() => {
@@ -748,9 +829,14 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
       }
     }
   }, [gameLoop, gameState])
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't prevent default if user is typing in an input field
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
+        return
+      }
+      
       gameStateRef.current.keys[e.code] = true
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyW", "KeyA", "KeyS", "KeyD"].includes(e.code)) {
         e.preventDefault()
@@ -977,16 +1063,15 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
                 { id: "player", name: "Player", defaultPrompt: "Main character", dimensions: { width: 30, height: 30 } },
                 { id: "car", name: "Car", defaultPrompt: "Road vehicles", dimensions: { width: 60, height: 30 } },
                 { id: "log", name: "Log", defaultPrompt: "River logs to jump on", dimensions: { width: 120, height: 20 } },
-              ]}
-              gameParams={[
-                { id: "playerSpeed", name: "Player Speed", type: "slider", min: 0.1, max: 0.5, step: 0.05, defaultValue: 0.2, value: 0.2 },
-                { id: "carSpeed", name: "Car Speed", type: "slider", min: 1, max: 6, step: 0.5, defaultValue: 3, value: 3 },
-                { id: "logSpeed", name: "Log Speed", type: "slider", min: 0.5, max: 3, step: 0.25, defaultValue: 1.5, value: 1.5 },
-                { id: "difficulty", name: "Difficulty", type: "slider", min: 0.5, max: 3, step: 0.1, defaultValue: 1, value: 1 },
-              ]}
-              isOpen={true}
+              ]}              gameParams={[
+                { id: "playerSpeed", name: "Player Speed", type: "slider", min: 0.1, max: 0.5, step: 0.05, defaultValue: 0.2, value: gameParams.playerSpeed },
+                { id: "carSpeed", name: "Car Speed", type: "slider", min: 1, max: 6, step: 0.5, defaultValue: 3, value: gameParams.carSpeed },
+                { id: "logSpeed", name: "Log Speed", type: "slider", min: 0.5, max: 3, step: 0.25, defaultValue: 1.5, value: gameParams.logSpeed },
+                { id: "difficulty", name: "Difficulty", type: "slider", min: 0.5, max: 3, step: 0.1, defaultValue: 1, value: gameParams.difficulty },
+              ]}              isOpen={true}
               onClose={() => {}}
               onAssetsChanged={(assets) => setCustomAssets(assets)}
+              onParamsChanged={handleParamsChanged}
             />
           </div>
         </div>

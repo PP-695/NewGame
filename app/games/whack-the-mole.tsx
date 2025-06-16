@@ -74,78 +74,123 @@ class Mole {
     this.visibilityTimer = 0
   }
 
-  render(ctx: CanvasRenderingContext2D) {
-    // Draw hole
-    ctx.fillStyle = "#4A4A4A"
-    ctx.beginPath()
-    ctx.ellipse(this.x, this.y + 20, this.size / 2, 20, 0, 0, Math.PI * 2)
-    ctx.fill()
+  render(ctx: CanvasRenderingContext2D, imageCache?: Record<string, HTMLImageElement>) {
+    // Draw hole - use custom hole image if available
+    if (imageCache?.hole) {
+      const holeImg = imageCache.hole
+      const holeSize = 80
+      ctx.drawImage(holeImg, this.x - holeSize/2, this.y + 10, holeSize, 40)
+    } else {
+      // Default hole
+      ctx.fillStyle = "#4A4A4A"
+      ctx.beginPath()
+      ctx.ellipse(this.x, this.y + 20, this.size / 2, 20, 0, 0, Math.PI * 2)
+      ctx.fill()
+    }
 
     if (this.isVisible) {
-      // Mole body color based on type
-      let bodyColor = "#8B4513"
-      let faceColor = "#A0522D"
-
-      if (this.type === "golden") {
-        bodyColor = "#FFD700"
-        faceColor = "#FFA500"
-      } else if (this.type === "bomb") {
-        bodyColor = "#2F2F2F"
-        faceColor = "#1F1F1F"
-      }
-
-      // Mole body
-      ctx.fillStyle = bodyColor
-      ctx.beginPath()
-      ctx.ellipse(this.x, this.y, this.size / 2 - 5, this.size / 2 - 5, 0, 0, Math.PI * 2)
-      ctx.fill()
-
-      // Mole face
-      ctx.fillStyle = faceColor
-      ctx.beginPath()
-      ctx.ellipse(this.x, this.y - 5, this.size / 2 - 10, this.size / 2 - 10, 0, 0, Math.PI * 2)
-      ctx.fill()
-
-      if (this.type === "bomb") {
-        // Bomb features
-        ctx.fillStyle = "red"
-        ctx.beginPath()
-        ctx.arc(this.x - 8, this.y - 10, 3, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.beginPath()
-        ctx.arc(this.x + 8, this.y - 10, 3, 0, Math.PI * 2)
-        ctx.fill()
-
-        // Fuse
-        ctx.strokeStyle = "orange"
-        ctx.lineWidth = 2
-        ctx.beginPath()
-        ctx.moveTo(this.x, this.y - 20)
-        ctx.lineTo(this.x + 5, this.y - 30)
-        ctx.stroke()
+      // Use custom mole image if available
+      if (imageCache?.mole) {
+        const moleImg = imageCache.mole
+        const moleSize = this.size
+        
+        // Apply tint based on mole type
+        if (this.type === "golden") {
+          ctx.filter = 'sepia(1) saturate(2) hue-rotate(38deg) brightness(1.2)'
+        } else if (this.type === "bomb") {
+          ctx.filter = 'grayscale(1) brightness(0.3)'
+        } else {
+          ctx.filter = 'none'
+        }
+        
+        ctx.drawImage(moleImg, this.x - moleSize/2, this.y - moleSize/2, moleSize, moleSize)
+        ctx.filter = 'none' // Reset filter
+        
+        // Add type indicators on top of custom image
+        if (this.type === "golden") {
+          ctx.fillStyle = "gold"
+          ctx.font = "16px Arial"
+          ctx.textAlign = "center"
+          ctx.strokeStyle = "black"
+          ctx.lineWidth = 2
+          ctx.strokeText("★", this.x, this.y + 20)
+          ctx.fillText("★", this.x, this.y + 20)
+        } else if (this.type === "bomb") {
+          ctx.fillStyle = "red"
+          ctx.font = "20px Arial"
+          ctx.textAlign = "center"
+          ctx.strokeStyle = "black"
+          ctx.lineWidth = 2
+          ctx.strokeText("💣", this.x, this.y + 25)
+          ctx.fillText("💣", this.x, this.y + 25)
+        }
       } else {
-        // Normal/Golden mole eyes
-        ctx.fillStyle = "black"
+        // Default mole rendering
+        // Mole body color based on type
+        let bodyColor = "#8B4513"
+        let faceColor = "#A0522D"
+
+        if (this.type === "golden") {
+          bodyColor = "#FFD700"
+          faceColor = "#FFA500"
+        } else if (this.type === "bomb") {
+          bodyColor = "#2F2F2F"
+          faceColor = "#1F1F1F"
+        }
+
+        // Mole body
+        ctx.fillStyle = bodyColor
         ctx.beginPath()
-        ctx.arc(this.x - 8, this.y - 10, 3, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.beginPath()
-        ctx.arc(this.x + 8, this.y - 10, 3, 0, Math.PI * 2)
+        ctx.ellipse(this.x, this.y, this.size / 2 - 5, this.size / 2 - 5, 0, 0, Math.PI * 2)
         ctx.fill()
 
-        // Nose
-        ctx.fillStyle = "#FF69B4"
+        // Mole face
+        ctx.fillStyle = faceColor
         ctx.beginPath()
-        ctx.arc(this.x, this.y - 2, 2, 0, Math.PI * 2)
+        ctx.ellipse(this.x, this.y - 5, this.size / 2 - 10, this.size / 2 - 10, 0, 0, Math.PI * 2)
         ctx.fill()
-      }
 
-      // Type indicator
-      if (this.type === "golden") {
-        ctx.fillStyle = "white"
-        ctx.font = "12px Arial"
-        ctx.textAlign = "center"
-        ctx.fillText("★", this.x, this.y + 15)
+        if (this.type === "bomb") {
+          // Bomb features
+          ctx.fillStyle = "red"
+          ctx.beginPath()
+          ctx.arc(this.x - 8, this.y - 10, 3, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.beginPath()
+          ctx.arc(this.x + 8, this.y - 10, 3, 0, Math.PI * 2)
+          ctx.fill()
+
+          // Fuse
+          ctx.strokeStyle = "orange"
+          ctx.lineWidth = 2
+          ctx.beginPath()
+          ctx.moveTo(this.x, this.y - 20)
+          ctx.lineTo(this.x + 5, this.y - 30)
+          ctx.stroke()
+        } else {
+          // Normal/Golden mole eyes
+          ctx.fillStyle = "black"
+          ctx.beginPath()
+          ctx.arc(this.x - 8, this.y - 10, 3, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.beginPath()
+          ctx.arc(this.x + 8, this.y - 10, 3, 0, Math.PI * 2)
+          ctx.fill()
+
+          // Nose
+          ctx.fillStyle = "#FF69B4"
+          ctx.beginPath()
+          ctx.arc(this.x, this.y - 2, 2, 0, Math.PI * 2)
+          ctx.fill()
+        }
+
+        // Type indicator
+        if (this.type === "golden") {
+          ctx.fillStyle = "white"
+          ctx.font = "12px Arial"
+          ctx.textAlign = "center"
+          ctx.fillText("★", this.x, this.y + 15)
+        }
       }
     }
   }
@@ -260,8 +305,73 @@ export default function WhackTheMole({ onBack, onScore }: WhackTheMoleProps) {
   const [isPaused, setIsPaused] = useState(false)
   const [customAssets, setCustomAssets] = useState<Record<string, string>>({})
 
-  // TODO: implement asset rendering
-  void customAssets
+  // Image cache for custom assets
+  const [imageCache, setImageCache] = useState<Record<string, HTMLImageElement>>({})
+
+  // Load custom images when assets change
+  useEffect(() => {
+    const loadImages = async () => {
+      const newImageCache: Record<string, HTMLImageElement> = {}
+      
+      for (const [assetId, assetUrl] of Object.entries(customAssets)) {
+        if (assetUrl) {
+          try {
+            const img = new Image()
+            img.crossOrigin = 'anonymous' // Handle CORS for data URLs
+            await new Promise((resolve, reject) => {
+              img.onload = resolve
+              img.onerror = reject
+              img.src = assetUrl
+            })
+            newImageCache[assetId] = img
+            console.log(`Loaded image for ${assetId}:`, img.width, 'x', img.height)
+          } catch (error) {
+            console.error(`Failed to load image for ${assetId}:`, error)
+          }
+        }
+      }
+      
+      setImageCache(newImageCache)
+    }
+
+    if (Object.keys(customAssets).length > 0) {
+      loadImages()
+    }
+  }, [customAssets])
+
+  // Game parameters state
+  const [gameParams, setGameParams] = useState({
+    gameTime: 60,
+    moleSpeed: 1.5,
+    spawnRate: 1500,
+    difficulty: 3
+  })
+
+  // Update game parameters when they change
+  useEffect(() => {
+    const game = gameStateRef.current
+    game.timeLeft = gameParams.gameTime * 1000 // Convert to milliseconds
+    
+    // Update mole AI if it exists
+    if (game.moleAI) {
+      game.moleAI.difficulty = gameParams.difficulty
+    }
+    
+    // Update time display if game is in menu
+    if (game.gameState === "menu") {
+      setTimeLeft(gameParams.gameTime)
+    }
+  }, [gameParams])
+
+  // Handle parameter changes from the reskin panel
+  const handleParamsChanged = useCallback((params: Record<string, number | string>) => {
+    setGameParams({
+      gameTime: Number(params.gameTime) || 60,
+      moleSpeed: Number(params.moleSpeed) || 1.5,
+      spawnRate: Number(params.spawnRate) || 1500,
+      difficulty: Number(params.difficulty) || 3
+    })
+  }, [])
 
   const initializeGame = () => {
     const canvas = canvasRef.current
@@ -375,25 +485,30 @@ export default function WhackTheMole({ onBack, onScore }: WhackTheMoleProps) {
       // Render
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-      // Background
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
-      gradient.addColorStop(0, "#87CEEB")
-      gradient.addColorStop(1, "#90EE90")
-      ctx.fillStyle = gradient
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      // Background - use custom background if available
+      if (imageCache?.background) {
+        ctx.drawImage(imageCache.background, 0, 0, canvas.width, canvas.height)
+      } else {
+        // Default background
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
+        gradient.addColorStop(0, "#87CEEB")
+        gradient.addColorStop(1, "#90EE90")
+        ctx.fillStyle = gradient
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-      // Draw grass texture
-      ctx.fillStyle = "#228B22"
-      for (let i = 0; i < canvas.width; i += 20) {
-        for (let j = 0; j < canvas.height; j += 20) {
-          if (Math.random() < 0.1) {
-            ctx.fillRect(i, j, 2, 8)
+        // Draw grass texture
+        ctx.fillStyle = "#228B22"
+        for (let i = 0; i < canvas.width; i += 20) {
+          for (let j = 0; j < canvas.height; j += 20) {
+            if (Math.random() < 0.1) {
+              ctx.fillRect(i, j, 2, 8)
+            }
           }
         }
       }
 
-      // Draw moles
-      game.moles.forEach((mole) => mole.render(ctx))
+      // Draw moles with imageCache
+      game.moles.forEach((mole) => mole.render(ctx, imageCache))
 
       // Draw UI
       ctx.fillStyle = "white"
@@ -428,7 +543,7 @@ export default function WhackTheMole({ onBack, onScore }: WhackTheMoleProps) {
       ctx.strokeText(`Max Combo: ${game.maxCombo}`, 20, canvas.height - 20)
       ctx.fillText(`Max Combo: ${game.maxCombo}`, 20, canvas.height - 20)
     },
-    [isPaused, onScore],
+    [isPaused, onScore, imageCache],
   )
 
   useEffect(() => {
@@ -594,14 +709,15 @@ export default function WhackTheMole({ onBack, onScore }: WhackTheMoleProps) {
             { id: "hammer", name: "Hammer", defaultPrompt: "cartoon mallet or hammer for whack-a-mole game", dimensions: { width: 40, height: 60 } },
           ]}
           gameParams={[
-            { id: "gameTime", name: "Game Time (s)", type: "slider", min: 30, max: 120, step: 15, defaultValue: 60, value: 60 },
-            { id: "moleSpeed", name: "Mole Speed", type: "slider", min: 0.5, max: 3, step: 0.25, defaultValue: 1.5, value: 1.5 },
-            { id: "spawnRate", name: "Spawn Rate", type: "slider", min: 500, max: 3000, step: 250, defaultValue: 1500, value: 1500 },
-            { id: "difficulty", name: "Difficulty", type: "slider", min: 1, max: 5, step: 1, defaultValue: 3, value: 3 },
+            { id: "gameTime", name: "Game Time (s)", type: "slider", min: 30, max: 120, step: 15, defaultValue: 60, value: gameParams.gameTime },
+            { id: "moleSpeed", name: "Mole Speed", type: "slider", min: 0.5, max: 3, step: 0.25, defaultValue: 1.5, value: gameParams.moleSpeed },
+            { id: "spawnRate", name: "Spawn Rate", type: "slider", min: 500, max: 3000, step: 250, defaultValue: 1500, value: gameParams.spawnRate },
+            { id: "difficulty", name: "Difficulty", type: "slider", min: 1, max: 5, step: 1, defaultValue: 3, value: gameParams.difficulty },
           ]}
           isOpen={true}
           onClose={() => {}}
           onAssetsChanged={(assets) => setCustomAssets(assets)}
+          onParamsChanged={handleParamsChanged}
           mode="inline"
           theme="whack-the-mole"
         />

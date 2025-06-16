@@ -31,6 +31,7 @@ class Player {
   logSpeed: number
   isInvincible: boolean
   invincibilityTimer: number
+  waterGraceTimer?: number
 
   constructor(x: number, y: number, gridSize: number) {
     this.x = x
@@ -45,9 +46,10 @@ class Player {
     this.logSpeed = 0
     this.isInvincible = false
     this.invincibilityTimer = 0
+    this.waterGraceTimer = undefined
   }
 
-  update(deltaTime: number) {
+  update(deltaTime: number, canvasWidth: number) {
     // Smooth movement animation
     if (this.isMoving) {
       const dx = this.targetX - this.x
@@ -63,10 +65,18 @@ class Player {
       }
     }
 
-    // Move with log if on one
+    // Move with log if on one - improved logic with bounds checking
     if (this.isOnLog && !this.isMoving) {
-      this.x += this.logSpeed
-      this.targetX += this.logSpeed
+      const newX = this.x + this.logSpeed
+      // Keep player within canvas bounds when on log
+      if (newX >= this.size / 2 + 10 && newX <= canvasWidth - this.size / 2 - 10) {
+        this.x = newX
+        this.targetX = newX
+      } else {
+        // If log would push player off screen, player falls off log
+        this.isOnLog = false
+        this.logSpeed = 0
+      }
     }
 
     // Update power-up timers
@@ -92,10 +102,12 @@ class Player {
         this.targetY += this.gridSize
         break
       case "left":
-        this.targetX = Math.max(this.gridSize / 2, this.targetX - this.gridSize)
+        // Improved bounds checking with more precise boundaries
+        this.targetX = Math.max(this.size / 2 + 10, this.targetX - this.gridSize)
         break
       case "right":
-        this.targetX = Math.min(canvasWidth - this.gridSize / 2, this.targetX + this.gridSize)
+        // Improved bounds checking with more precise boundaries
+        this.targetX = Math.min(canvasWidth - this.size / 2 - 10, this.targetX + this.gridSize)
         break
     }
 
@@ -111,7 +123,7 @@ class Player {
     this.invincibilityTimer = duration
   }
 
-  render(ctx: CanvasRenderingContext2D) {
+  render(ctx: CanvasRenderingContext2D, customImage?: HTMLImageElement) {
     ctx.save()
 
     // Invincibility effect
@@ -119,38 +131,47 @@ class Player {
       ctx.globalAlpha = 0.5
     }
 
-    // Player body (frog)
-    ctx.fillStyle = "#4CAF50"
-    ctx.beginPath()
-    ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2)
-    ctx.fill()
+    if (customImage) {
+      // Draw custom player image
+      const scale = this.size / Math.max(customImage.width, customImage.height)
+      const width = customImage.width * scale
+      const height = customImage.height * scale
+      ctx.drawImage(customImage, this.x - width/2, this.y - height/2, width, height)
+    } else {
+      // Default player rendering (frog)
+      // Player body (frog)
+      ctx.fillStyle = "#4CAF50"
+      ctx.beginPath()
+      ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2)
+      ctx.fill()
 
-    // Frog spots
-    ctx.fillStyle = "#2E7D32"
-    ctx.beginPath()
-    ctx.arc(this.x - 8, this.y - 5, 3, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.beginPath()
-    ctx.arc(this.x + 8, this.y - 5, 3, 0, Math.PI * 2)
-    ctx.fill()
+      // Frog spots
+      ctx.fillStyle = "#2E7D32"
+      ctx.beginPath()
+      ctx.arc(this.x - 8, this.y - 5, 3, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(this.x + 8, this.y - 5, 3, 0, Math.PI * 2)
+      ctx.fill()
 
-    // Eyes
-    ctx.fillStyle = "#FFEB3B"
-    ctx.beginPath()
-    ctx.arc(this.x - 6, this.y - 8, 4, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.beginPath()
-    ctx.arc(this.x + 6, this.y - 8, 4, 0, Math.PI * 2)
-    ctx.fill()
+      // Eyes
+      ctx.fillStyle = "#FFEB3B"
+      ctx.beginPath()
+      ctx.arc(this.x - 6, this.y - 8, 4, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(this.x + 6, this.y - 8, 4, 0, Math.PI * 2)
+      ctx.fill()
 
-    // Eye pupils
-    ctx.fillStyle = "black"
-    ctx.beginPath()
-    ctx.arc(this.x - 6, this.y - 8, 2, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.beginPath()
-    ctx.arc(this.x + 6, this.y - 8, 2, 0, Math.PI * 2)
-    ctx.fill()
+      // Eye pupils
+      ctx.fillStyle = "black"
+      ctx.beginPath()
+      ctx.arc(this.x - 6, this.y - 8, 2, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(this.x + 6, this.y - 8, 2, 0, Math.PI * 2)
+      ctx.fill()
+    }
 
     ctx.restore()
   }
@@ -207,33 +228,42 @@ class Vehicle {
     this.x += this.speed * this.direction
   }
 
-  render(ctx: CanvasRenderingContext2D) {
-    // Vehicle body
-    ctx.fillStyle = this.color
-    ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height)
+  render(ctx: CanvasRenderingContext2D, customImage?: HTMLImageElement) {
+    if (customImage) {
+      // Draw custom vehicle image
+      const scale = Math.min(this.width / customImage.width, this.height / customImage.height)
+      const width = customImage.width * scale
+      const height = customImage.height * scale
+      ctx.drawImage(customImage, this.x - width/2, this.y - height/2, width, height)
+    } else {
+      // Default vehicle rendering
+      // Vehicle body
+      ctx.fillStyle = this.color
+      ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height)
 
-    // Vehicle details
-    ctx.fillStyle = "rgba(0, 0, 0, 0.3)"
-    ctx.fillRect(this.x - this.width / 2 + 5, this.y - this.height / 2 + 5, this.width - 10, 8)
+      // Vehicle details
+      ctx.fillStyle = "rgba(0, 0, 0, 0.3)"
+      ctx.fillRect(this.x - this.width / 2 + 5, this.y - this.height / 2 + 5, this.width - 10, 8)
 
-    // Wheels
-    ctx.fillStyle = "black"
-    const wheelY = this.y + this.height / 2
-    ctx.beginPath()
-    ctx.arc(this.x - this.width / 3, wheelY, 5, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.beginPath()
-    ctx.arc(this.x + this.width / 3, wheelY, 5, 0, Math.PI * 2)
-    ctx.fill()
+      // Wheels
+      ctx.fillStyle = "black"
+      const wheelY = this.y + this.height / 2
+      ctx.beginPath()
+      ctx.arc(this.x - this.width / 3, wheelY, 5, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(this.x + this.width / 3, wheelY, 5, 0, Math.PI * 2)
+      ctx.fill()
 
-    // Type-specific details
-    if (this.type === "truck") {
-      ctx.fillStyle = "#666666"
-      ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2 - 10, this.width, 10)
-    } else if (this.type === "bus") {
-      ctx.fillStyle = "rgba(255, 255, 255, 0.7)"
-      for (let i = 0; i < 4; i++) {
-        ctx.fillRect(this.x - this.width / 2 + 10 + i * 20, this.y - this.height / 2 + 8, 15, 12)
+      // Type-specific details
+      if (this.type === "truck") {
+        ctx.fillStyle = "#666666"
+        ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2 - 10, this.width, 10)
+      } else if (this.type === "bus") {
+        ctx.fillStyle = "rgba(255, 255, 255, 0.7)"
+        for (let i = 0; i < 4; i++) {
+          ctx.fillRect(this.x - this.width / 2 + 10 + i * 20, this.y - this.height / 2 + 8, 15, 12)
+        }
       }
     }
   }
@@ -269,29 +299,38 @@ class Log {
     this.x += this.speed * this.direction
   }
 
-  render(ctx: CanvasRenderingContext2D) {
-    // Log body
-    ctx.fillStyle = "#8B4513"
-    ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height)
+  render(ctx: CanvasRenderingContext2D, customImage?: HTMLImageElement) {
+    if (customImage) {
+      // Draw custom log image
+      const scale = Math.min(this.width / customImage.width, this.height / customImage.height)
+      const width = customImage.width * scale
+      const height = customImage.height * scale
+      ctx.drawImage(customImage, this.x - width/2, this.y - height/2, width, height)
+    } else {
+      // Default log rendering
+      // Log body
+      ctx.fillStyle = "#8B4513"
+      ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height)
 
-    // Log texture
-    ctx.strokeStyle = "#654321"
-    ctx.lineWidth = 2
-    for (let i = 0; i < 3; i++) {
+      // Log texture
+      ctx.strokeStyle = "#654321"
+      ctx.lineWidth = 2
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath()
+        ctx.moveTo(this.x - this.width / 2, this.y - this.height / 2 + i * 12)
+        ctx.lineTo(this.x + this.width / 2, this.y - this.height / 2 + i * 12)
+        ctx.stroke()
+      }
+
+      // Log ends
+      ctx.fillStyle = "#A0522D"
       ctx.beginPath()
-      ctx.moveTo(this.x - this.width / 2, this.y - this.height / 2 + i * 12)
-      ctx.lineTo(this.x + this.width / 2, this.y - this.height / 2 + i * 12)
-      ctx.stroke()
+      ctx.arc(this.x - this.width / 2, this.y, this.height / 2, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(this.x + this.width / 2, this.y, this.height / 2, 0, Math.PI * 2)
+      ctx.fill()
     }
-
-    // Log ends
-    ctx.fillStyle = "#A0522D"
-    ctx.beginPath()
-    ctx.arc(this.x - this.width / 2, this.y, this.height / 2, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.beginPath()
-    ctx.arc(this.x + this.width / 2, this.y, this.height / 2, 0, Math.PI * 2)
-    ctx.fill()
   }
 
   getBounds() {
@@ -380,7 +419,9 @@ class Lane {
   update(deltaTime: number, canvasWidth: number, difficulty: number) {
     this.spawnTimer += deltaTime
 
-    const adjustedInterval = Math.max(800, this.spawnInterval - difficulty * 100)
+    // Improved spawn timing with better difficulty scaling
+    const baseInterval = this.type === "road" ? 2500 : 3000
+    const adjustedInterval = Math.max(800, baseInterval - difficulty * 150)
 
     if (this.spawnTimer >= adjustedInterval) {
       this.spawn(canvasWidth, difficulty)
@@ -390,13 +431,13 @@ class Lane {
     // Update vehicles
     this.vehicles.forEach((vehicle) => vehicle.update())
     this.vehicles = this.vehicles.filter((vehicle) => {
-      return vehicle.x > -200 && vehicle.x < canvasWidth + 200
+      return vehicle.x > -300 && vehicle.x < canvasWidth + 300
     })
 
     // Update logs
     this.logs.forEach((log) => log.update())
     this.logs = this.logs.filter((log) => {
-      return log.x > -200 && log.x < canvasWidth + 200
+      return log.x > -300 && log.x < canvasWidth + 300
     })
 
     // Update power-ups
@@ -406,25 +447,36 @@ class Lane {
 
   spawn(canvasWidth: number, difficulty: number) {
     const startX = this.direction > 0 ? -100 : canvasWidth + 100
-    const adjustedSpeed = this.speed * (1 + difficulty * 0.2)
+    const adjustedSpeed = this.speed * (1 + difficulty * 0.15) // Reduced difficulty scaling
 
     if (this.type === "road") {
-      const vehicleTypes: ("car" | "truck" | "bus")[] = ["car", "car", "truck", "bus"]
+      // Improved vehicle spawning with better variety
+      const vehicleTypes: ("car" | "truck" | "bus")[] = ["car", "car", "car", "truck", "bus"]
       const type = vehicleTypes[Math.floor(Math.random() * vehicleTypes.length)]
-      this.vehicles.push(new Vehicle(startX, this.y, adjustedSpeed, this.direction, type))
+      
+      // Ensure minimum gap between vehicles for fairness
+      const lastVehicle = this.vehicles[this.vehicles.length - 1]
+      if (!lastVehicle || Math.abs(lastVehicle.x - startX) > 150) {
+        this.vehicles.push(new Vehicle(startX, this.y, adjustedSpeed, this.direction, type))
+      }
     } else if (this.type === "river") {
-      // Spawn log
-      const logWidth = 80 + Math.random() * 60
-      this.logs.push(new Log(startX, this.y, logWidth, adjustedSpeed * 0.5, this.direction))
+      // Improved log spawning with guaranteed safe spots
+      const logWidth = 100 + Math.random() * 80 // Larger logs for easier gameplay
+      const lastLog = this.logs[this.logs.length - 1]
+      
+      // Ensure reasonable spacing between logs
+      if (!lastLog || Math.abs(lastLog.x - startX) > 80) {
+        this.logs.push(new Log(startX, this.y, logWidth, adjustedSpeed * 0.6, this.direction))
+      }
     }
 
-    // Occasionally spawn power-ups on safe lanes
-    if (this.type === "safe" && Math.random() < 0.03) {
+    // Reduced power-up spawn rate for better balance
+    if (this.type === "safe" && Math.random() < 0.02) {
       this.powerUps.push(new PowerUp(canvasWidth / 2 + (Math.random() - 0.5) * 200, this.y))
     }
   }
 
-  render(ctx: CanvasRenderingContext2D, canvasWidth: number) {
+  render(ctx: CanvasRenderingContext2D, canvasWidth: number, customImages?: Record<string, HTMLImageElement>) {
     // Lane background
     if (this.type === "safe") {
       ctx.fillStyle = "#90EE90"
@@ -457,8 +509,8 @@ class Lane {
     }
 
     // Render objects
-    this.vehicles.forEach((vehicle) => vehicle.render(ctx))
-    this.logs.forEach((log) => log.render(ctx))
+    this.vehicles.forEach((vehicle) => vehicle.render(ctx, customImages?.['car']))
+    this.logs.forEach((log) => log.render(ctx, customImages?.['log']))
     this.powerUps.forEach((powerUp) => powerUp.render(ctx))
   }
 }
@@ -485,16 +537,100 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
   const [isPaused, setIsPaused] = useState(false)
   const [customAssets, setCustomAssets] = useState<Record<string, string>>({})
 
-  // Use customAssets to avoid TypeScript warning - TODO: implement asset rendering
-  console.log('Custom assets available:', customAssets)
+  // Image cache for custom assets
+  const [imageCache, setImageCache] = useState<Record<string, HTMLImageElement>>({})
+
+  // Load custom images when assets change
+  useEffect(() => {
+    const loadImages = async () => {
+      const newImageCache: Record<string, HTMLImageElement> = {}
+      
+      for (const [assetId, assetUrl] of Object.entries(customAssets)) {
+        if (assetUrl) {
+          try {
+            const img = new Image()
+            img.crossOrigin = 'anonymous' // Handle CORS for data URLs
+            await new Promise((resolve, reject) => {
+              img.onload = resolve
+              img.onerror = reject
+              img.src = assetUrl
+            })
+            newImageCache[assetId] = img
+            console.log(`Loaded image for ${assetId}:`, img.width, 'x', img.height)
+          } catch (error) {
+            console.error(`Failed to load image for ${assetId}:`, error)
+          }
+        }
+      }
+      
+      setImageCache(newImageCache)
+    }
+
+    if (Object.keys(customAssets).length > 0) {
+      loadImages()
+    }
+  }, [customAssets])
+
+  // Game parameters state
+  const [gameParams, setGameParams] = useState({
+    playerSpeed: 0.2,
+    carSpeed: 3,
+    logSpeed: 1.5,
+    difficulty: 1
+  })
+
+  // Update game parameters when they change
+  useEffect(() => {
+    const game = gameStateRef.current
+    game.player.moveSpeed = gameParams.playerSpeed
+    game.difficulty = gameParams.difficulty
+    
+    // Update existing lanes with new speeds
+    game.lanes.forEach(lane => {
+      if (lane.type === 'road') {
+        lane.vehicles.forEach(vehicle => {
+          vehicle.speed = gameParams.carSpeed * (lane.direction === -1 ? -1 : 1)
+        })
+      } else if (lane.type === 'river') {
+        lane.logs.forEach(log => {
+          log.speed = gameParams.logSpeed * (lane.direction === -1 ? -1 : 1)
+        })
+      }
+    })
+  }, [gameParams])
+
+  // Handle parameter changes from the reskin panel
+  const handleParamsChanged = useCallback((params: Record<string, number | string>) => {
+    // Update game parameters
+    setGameParams({
+      playerSpeed: Number(params.playerSpeed) || 0.2,
+      carSpeed: Number(params.carSpeed) || 3,
+      logSpeed: Number(params.logSpeed) || 1.5,
+      difficulty: Number(params.difficulty) || 1
+    })
+    
+    // Update custom assets
+    const assets: Record<string, string> = {}
+    Object.entries(params).forEach(([key, value]) => {
+      if (typeof value === 'string' && value.startsWith('data:image/')) {
+        assets[key] = value
+      }
+    })
+    if (Object.keys(assets).length > 0) {
+      setCustomAssets(prev => ({ ...prev, ...assets }))
+    }
+  }, [])
 
   const checkCollision = (rect1: CollisionRect | null, rect2: CollisionRect | null) => {
     if (!rect1 || !rect2) return false
+    
+    // Improved collision detection with slight tolerance for better gameplay
+    const tolerance = 2
     return (
-      rect1.x < rect2.x + rect2.width &&
-      rect1.x + rect1.width > rect2.x &&
-      rect1.y < rect2.y + rect2.height &&
-      rect1.y + rect1.height > rect2.y
+      rect1.x + tolerance < rect2.x + rect2.width &&
+      rect1.x + rect1.width - tolerance > rect2.x &&
+      rect1.y + tolerance < rect2.y + rect2.height &&
+      rect1.y + rect1.height - tolerance > rect2.y
     )
   }
 
@@ -502,19 +638,24 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
     const game = gameStateRef.current
     game.lanes = []
 
-    // Create initial lanes
-    for (let i = 0; i < 20; i++) {
+    // Create initial lanes with better progression
+    for (let i = 0; i < 25; i++) {
       const y = 600 - i * 40
       let type: "safe" | "road" | "river"
 
       if (i === 0) {
         type = "safe" // Starting lane
-      } else if (i % 6 === 0) {
-        type = "safe" // Safe lane every 6 lanes
-      } else if (Math.random() < 0.5) {
-        type = "road"
+      } else if (i <= 3) {
+        // First few lanes should be easier
+        type = i % 2 === 1 ? "road" : "safe"
+      } else if (i % 7 === 0) {
+        type = "safe" // Safe lane every 7 lanes
       } else {
-        type = "river"
+        // Balanced distribution with slight preference for variety
+        const rand = Math.random()
+        if (rand < 0.4) type = "road"
+        else if (rand < 0.75) type = "river"
+        else type = "safe"
       }
 
       game.lanes.push(new Lane(y, type))
@@ -540,16 +681,18 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
         game.keys["ArrowUp"] = false
         game.keys["KeyW"] = false
 
-        // Score for moving forward
-        const newScore = Math.max(game.score, Math.floor((600 - game.player.y) / 40))
+        // Improved score calculation - more accurate progress tracking
+        const progressY = 600 - game.player.targetY // Use target Y for smoother scoring
+        const newScore = Math.max(0, Math.floor(progressY / 40))
         if (newScore > game.score) {
-          game.consecutiveLanes++
+          const scoreIncrease = newScore - game.score
+          game.consecutiveLanes += scoreIncrease
           game.score = newScore
           setScore(game.score)
 
-          // Bonus points for consecutive lanes
+          // Bonus points for consecutive forward moves
           if (game.consecutiveLanes >= 5) {
-            game.bonusPoints += 10
+            game.bonusPoints += game.consecutiveLanes * 5 // More generous bonus
             game.consecutiveLanes = 0
           }
         }
@@ -572,31 +715,52 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
       }
 
       // Update player
-      game.player.update(deltaTime)
+      game.player.update(deltaTime, canvas.width)
 
-      // Update difficulty
-      game.difficulty = 1 + Math.floor(game.score / 10) * 0.3
+      // Update difficulty with better scaling
+      game.difficulty = 1 + Math.floor(game.score / 15) * 0.2 // Slower difficulty increase
 
-      // Update camera to follow player
-      const targetCameraY = game.player.y - canvas.height + 150
-      game.camera.y += (targetCameraY - game.camera.y) * 0.1
+      // Improved camera movement - smoother following
+      const targetCameraY = game.player.y - canvas.height * 0.7 // Keep player in lower 30% of screen
+      const cameraSpeed = 0.08 // Smoother camera movement
+      game.camera.y += (targetCameraY - game.camera.y) * cameraSpeed
 
       // Update lanes
       game.lanes.forEach((lane) => {
         lane.update(deltaTime, canvas.width, game.difficulty)
       })
 
-      // Add new lanes at the top
+      // Add new lanes at the top with improved generation logic
       if (game.lanes.length > 0 && game.lanes[game.lanes.length - 1].y > game.camera.y - 100) {
         const newY = game.lanes[game.lanes.length - 1].y - 40
         let type: "safe" | "road" | "river"
 
-        if (game.lanes.length % 6 === 0) {
+        // Improved lane generation for better gameplay
+        const lastThreeLanes = game.lanes.slice(-3).map(lane => lane.type)
+        const roadCount = lastThreeLanes.filter(t => t === "road").length
+        const riverCount = lastThreeLanes.filter(t => t === "river").length
+        
+        // Force safe lane every 8 lanes for guaranteed rest spots
+        if (game.lanes.length % 8 === 0) {
           type = "safe"
-        } else if (Math.random() < 0.5) {
-          type = "road"
-        } else {
-          type = "river"
+        }
+        // Prevent too many consecutive difficult lanes
+        else if (roadCount >= 2 && riverCount >= 1) {
+          type = "safe"
+        }
+        // Balance between roads and rivers
+        else if (roadCount >= 3) {
+          type = Math.random() < 0.7 ? "river" : "safe"
+        }
+        else if (riverCount >= 2) {
+          type = Math.random() < 0.7 ? "road" : "safe"
+        }
+        // Default random selection with slight bias toward roads
+        else {
+          const rand = Math.random()
+          if (rand < 0.45) type = "road"
+          else if (rand < 0.8) type = "river"
+          else type = "safe"
         }
 
         game.lanes.push(new Lane(newY, type))
@@ -615,9 +779,18 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
         const playerBounds = game.player.getBounds()
 
         if (playerLane.type === "road" && !game.player.isInvincible) {
-          // Check vehicle collisions
+          // Check vehicle collisions with improved detection
           for (const vehicle of playerLane.vehicles) {
-            if (checkCollision(playerBounds, vehicle.getBounds())) {
+            const vehicleBounds = vehicle.getBounds()
+            // Slightly reduce vehicle collision area for fairer gameplay
+            const adjustedVehicleBounds = {
+              x: vehicleBounds.x + 3,
+              y: vehicleBounds.y + 3,
+              width: vehicleBounds.width - 6,
+              height: vehicleBounds.height - 6
+            }
+            
+            if (checkCollision(playerBounds, adjustedVehicleBounds)) {
               game.gameState = "gameOver"
               setGameState("gameOver")
               if (game.score > game.bestScore) {
@@ -630,9 +803,18 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
         } else if (playerLane.type === "river") {
           let onLog = false
 
-          // Check log collisions
+          // Check log collisions with improved detection
           for (const log of playerLane.logs) {
-            if (checkCollision(playerBounds, log.getBounds())) {
+            const logBounds = log.getBounds()
+            // Slightly expand log collision for easier gameplay
+            const expandedLogBounds = {
+              x: logBounds.x - 5,
+              y: logBounds.y - 5,
+              width: logBounds.width + 10,
+              height: logBounds.height + 10
+            }
+            
+            if (checkCollision(playerBounds, expandedLogBounds)) {
               game.player.isOnLog = true
               game.player.logSpeed = log.speed * log.direction
               onLog = true
@@ -640,15 +822,26 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
             }
           }
 
-          // Drown if not on log
-          if (!onLog) {
-            game.gameState = "gameOver"
-            setGameState("gameOver")
-            if (game.score > game.bestScore) {
-              game.bestScore = game.score
+          // Grace period for jumping between logs (500ms)
+          if (!onLog && !game.player.isMoving) {
+            // Only drown if player has been stationary in water for too long
+            if (!game.player.waterGraceTimer) {
+              game.player.waterGraceTimer = 500 // 500ms grace period
+            } else {
+              game.player.waterGraceTimer -= deltaTime
+              if (game.player.waterGraceTimer <= 0) {
+                game.gameState = "gameOver"
+                setGameState("gameOver")
+                if (game.score > game.bestScore) {
+                  game.bestScore = game.score
+                }
+                onScore(game.score + game.bonusPoints)
+                return
+              }
             }
-            onScore(game.score + game.bonusPoints)
-            return
+          } else {
+            // Reset grace timer when on log or moving
+            game.player.waterGraceTimer = undefined
           }
         }
 
@@ -657,14 +850,15 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
           const powerUpBounds = powerUp.getBounds()
           if (powerUpBounds && checkCollision(playerBounds, powerUpBounds)) {
             powerUp.collected = true
-            game.bonusPoints += 50
-            game.player.activateInvincibility(5000)
+            game.bonusPoints += 25 // Reduced from 50 for better balance
+            game.player.activateInvincibility(3000) // Reduced from 5000ms
+            // Visual feedback could be added here
           }
         }
       }
 
-      // Check if player fell off screen
-      if (game.player.y > game.camera.y + canvas.height) {
+      // Check if player fell off screen or went too far back
+      if (game.player.y > game.camera.y + canvas.height + 100 || game.player.y > 650) {
         game.gameState = "gameOver"
         setGameState("gameOver")
         if (game.score > game.bestScore) {
@@ -682,17 +876,23 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
       ctx.translate(0, -game.camera.y)
 
       // Draw background
-      const gradient = ctx.createLinearGradient(0, game.camera.y, 0, game.camera.y + canvas.height)
-      gradient.addColorStop(0, "#87CEEB")
-      gradient.addColorStop(1, "#98FB98")
-      ctx.fillStyle = gradient
-      ctx.fillRect(0, game.camera.y, canvas.width, canvas.height)
+      if (imageCache['background']) {
+        // Draw custom background image
+        ctx.drawImage(imageCache['background'], 0, game.camera.y, canvas.width, canvas.height)
+      } else {
+        // Default background
+        const gradient = ctx.createLinearGradient(0, game.camera.y, 0, game.camera.y + canvas.height)
+        gradient.addColorStop(0, "#87CEEB")
+        gradient.addColorStop(1, "#98FB98")
+        ctx.fillStyle = gradient
+        ctx.fillRect(0, game.camera.y, canvas.width, canvas.height)
+      }
 
       // Draw lanes
-      game.lanes.forEach((lane) => lane.render(ctx, canvas.width))
+      game.lanes.forEach((lane) => lane.render(ctx, canvas.width, imageCache))
 
       // Draw player
-      game.player.render(ctx)
+      game.player.render(ctx, imageCache['player'])
 
       // Restore context
       ctx.restore()
@@ -709,10 +909,20 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
       ctx.strokeText(`Difficulty: ${game.difficulty.toFixed(1)}x`, 20, 70)
       ctx.fillText(`Difficulty: ${game.difficulty.toFixed(1)}x`, 20, 70)
 
-      // Power-up indicators
+      // Power-up indicators and warnings
       if (game.player.isInvincible) {
         ctx.fillStyle = "#00BFFF"
         ctx.fillText(`🛡 ${Math.ceil(game.player.invincibilityTimer / 1000)}s`, canvas.width - 150, 40)
+      }
+
+      // Water danger warning
+      if (game.player.waterGraceTimer && game.player.waterGraceTimer < 300) {
+        ctx.fillStyle = "#FF4444"
+        ctx.font = "bold 20px Arial"
+        const warningAlpha = Math.sin(Date.now() * 0.01) * 0.5 + 0.5
+        ctx.globalAlpha = warningAlpha
+        ctx.fillText("DANGER! Find a log!", canvas.width / 2 - 100, 100)
+        ctx.globalAlpha = 1
       }
 
       if (game.bonusPoints > 0) {
@@ -720,7 +930,7 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
         ctx.fillText(`Bonus: ${game.bonusPoints}`, canvas.width - 150, 70)
       }
     },
-    [isPaused, onScore],
+    [isPaused, onScore, imageCache],
   )
 
   useEffect(() => {
@@ -751,6 +961,12 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't prevent default if user is typing in an input field
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
+        return
+      }
+      
       gameStateRef.current.keys[e.code] = true
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyW", "KeyA", "KeyS", "KeyD"].includes(e.code)) {
         e.preventDefault()
@@ -972,14 +1188,15 @@ export default function CrossyRoad({ onBack, onScore }: CrossyRoadProps) {
             { id: "log", name: "Log", defaultPrompt: "River logs to jump on", dimensions: { width: 120, height: 20 } },
           ]}
           gameParams={[
-            { id: "playerSpeed", name: "Player Speed", type: "slider", min: 0.1, max: 0.5, step: 0.05, defaultValue: 0.2, value: 0.2 },
-            { id: "carSpeed", name: "Car Speed", type: "slider", min: 1, max: 6, step: 0.5, defaultValue: 3, value: 3 },
-            { id: "logSpeed", name: "Log Speed", type: "slider", min: 0.5, max: 3, step: 0.25, defaultValue: 1.5, value: 1.5 },
-            { id: "difficulty", name: "Difficulty", type: "slider", min: 0.5, max: 3, step: 0.1, defaultValue: 1, value: 1 },
+            { id: "playerSpeed", name: "Player Speed", type: "slider", min: 0.1, max: 0.5, step: 0.05, defaultValue: 0.2, value: gameParams.playerSpeed },
+            { id: "carSpeed", name: "Car Speed", type: "slider", min: 1, max: 6, step: 0.5, defaultValue: 3, value: gameParams.carSpeed },
+            { id: "logSpeed", name: "Log Speed", type: "slider", min: 0.5, max: 3, step: 0.25, defaultValue: 1.5, value: gameParams.logSpeed },
+            { id: "difficulty", name: "Difficulty", type: "slider", min: 0.5, max: 3, step: 0.1, defaultValue: 1, value: gameParams.difficulty },
           ]}
           isOpen={true}
           onClose={() => {}}
           onAssetsChanged={(assets) => setCustomAssets(assets)}
+          onParamsChanged={handleParamsChanged}
           mode="inline"
           theme="crossy-road"
         />
